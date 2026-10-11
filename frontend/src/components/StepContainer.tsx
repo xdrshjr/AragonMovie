@@ -8,7 +8,6 @@ interface StepContainerProps {
 
 export const StepContainer: React.FC<StepContainerProps> = ({
   currentStep,
-  totalSteps,
   children,
 }) => {
   const steps = [

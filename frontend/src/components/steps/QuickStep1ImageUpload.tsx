@@ -121,22 +121,6 @@ export default function QuickStep1ImageUpload({
     logger.info('QuickStep1', `Removed scene: ${sceneId}`);
   };
 
-  // Reorder scenes (drag to reorder)
-  const handleReorder = (fromIndex: number, toIndex: number) => {
-    const newScenes = [...scenes];
-    const [movedScene] = newScenes.splice(fromIndex, 1);
-    newScenes.splice(toIndex, 0, movedScene);
-
-    // Update scene IDs to maintain sequential order
-    const reorderedScenes = newScenes.map((scene, index) => ({
-      ...scene,
-      id: `scene_${String(index + 1).padStart(3, '0')}`,
-    }));
-
-    setScenes(reorderedScenes);
-    logger.info('QuickStep1', `Reordered scenes: ${fromIndex} -> ${toIndex}`);
-  };
-
   // Handle next button
   const handleNext = () => {
     if (scenes.length === 0) {
@@ -211,7 +195,7 @@ export default function QuickStep1ImageUpload({
               </h3>
               <Button
                 variant="secondary"
-                size="small"
+                size="sm"
                 onClick={() => setScenes([])}
               >
                 清空全部

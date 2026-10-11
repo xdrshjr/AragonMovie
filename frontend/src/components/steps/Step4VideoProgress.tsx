@@ -17,6 +17,8 @@ interface Step4VideoProgressProps {
   onCancel: () => void;
   quickModeScenes?: QuickModeScene[];
   isQuickMode?: boolean;
+  /** Reserved for future use; currently ignored by this step */
+  continuityConfig?: unknown;
 }
 
 export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
@@ -163,10 +165,10 @@ export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
       // Call workflow API with cleaned script
       const response = await apiClient.startWorkflow({
         script: cleanedScript,
-        videoType,
-        videoSubtype,
-        characterImages: Object.keys(characterImages).length > 0 ? characterImages : undefined,
-        sceneImages: Object.keys(sceneImages).length > 0 ? sceneImages : undefined,
+        video_type: videoType,
+        video_subtype: videoSubtype,
+        character_images: Object.keys(characterImages).length > 0 ? characterImages : undefined,
+        scene_images: Object.keys(sceneImages).length > 0 ? sceneImages : undefined,
         config: {
           video_fps: 30,
           video_duration: 5.0,
@@ -319,16 +321,7 @@ export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
     }
   };
 
-  // Stage indicators
-  const stages = [
-    'Initializing',
-    'Parsing Script',
-    'Character References',
-    'Scene Images',
-    'Scene Videos',
-    'Composing Video',
-    'Finalizing',
-  ];
+
 
   return (
     <div className="space-y-6">

@@ -122,6 +122,23 @@ class Settings(BaseSettings):
     judge_temperature: float = 0.3  # Judge LLM的温度参数（越低越稳定）
 
     # 可选配置
+    tts_api_key: str = ""
+    tts_base_url: str = "https://api.openai.com/v1"
+    tts_model: str = "tts-1"
+    tts_default_voice: str = "alloy"
+    tts_default_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
+    tts_default_speed: float = 1.0
+    enable_tts: bool = False
+
+    agent_enabled: bool = False
+    agent_provider: Literal["openai", "anthropic", "google"] = "openai"
+    agent_api_key: str = ""
+    agent_base_url: Optional[str] = None
+    agent_model: str = ""
+    agent_max_turns: int = 20
+    agent_timeout_seconds: int = 300
+    aragon_cli_path: str = "aragon"
+
     openai_api_key: Optional[str] = None
 
     class Config:

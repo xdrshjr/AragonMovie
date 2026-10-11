@@ -30,6 +30,21 @@ logger = get_logger(__name__)
 async def lifespan(app: FastAPI):
     """Lifespan context manager for startup and shutdown events"""
     # Startup
+    # Load runtime model settings (Settings UI / agent overrides) on top of .env
+    from backend.core.settings_store import get_settings_store
+    try:
+        runtime_settings = get_settings_store().load_and_apply()
+        logger.info(
+            f"Runtime model settings loaded | file={get_settings_store().file_path}"
+        )
+        if runtime_settings.agent.enabled:
+            logger.info(
+                f"Agent assist enabled | provider={runtime_settings.agent.provider} "
+                f"| model={runtime_settings.agent.model}"
+            )
+    except Exception as e:
+        logger.warning(f"Runtime settings load failed, using .env defaults: {e}")
+
     logger.info("=" * 60)
     logger.info(f"Starting {settings.api_title} v{settings.api_version}")
     logger.info(f"Server: {settings.host}:{settings.port}")

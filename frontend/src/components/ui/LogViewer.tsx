@@ -73,7 +73,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
                 </span>
                 <span className="text-text-primary flex-1">{log.message}</span>
               </div>
-              {log.data && (
+              {log.data != null && (
                 <pre className="mt-1 ml-24 text-xs text-text-secondary overflow-x-auto">
                   {JSON.stringify(log.data, null, 2)}
                 </pre>

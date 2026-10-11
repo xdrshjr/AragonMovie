@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import StepContainer from '@/components/StepContainer';
 import ModeSidebar from '@/components/ModeSidebar';
@@ -25,9 +25,7 @@ interface VideoContinuityConfig {
 }
 
 export default function WorkflowPage() {
-  const params = useParams();
   const searchParams = useSearchParams();
-  const projectId = params.projectId as string;
 
   // Get initial values from URL params
   const urlVideoType = searchParams.get('videoType') as VideoType | null;

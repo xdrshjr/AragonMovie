@@ -20,7 +20,7 @@ const useTabsContext = () => {
 
 // Main Tabs container
 interface TabsProps {
-  defaultValue: string;
+  defaultValue?: string;
   value?: string;
   onValueChange?: (value: string) => void;
   children: ReactNode;
@@ -34,7 +34,7 @@ export const Tabs: React.FC<TabsProps> = ({
   children,
   className = '',
 }) => {
-  const [internalValue, setInternalValue] = useState(defaultValue);
+  const [internalValue, setInternalValue] = useState(defaultValue ?? '');
   
   const isControlled = controlledValue !== undefined;
   const activeTab = isControlled ? controlledValue : internalValue;

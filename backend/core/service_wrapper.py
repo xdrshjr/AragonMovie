@@ -147,6 +147,15 @@ class LLMServiceWrapper:
             )
 
 
+    async def close(self):
+        """Close the underlying LLM client (used on hot-reconfigure)."""
+        try:
+            await self.service.close()
+            logger.info("LLM service client closed")
+        except Exception as e:
+            logger.error(f"Error closing LLM service: {e}")
+
+
 class ImageServiceWrapper:
     """Wrapper for image generation services"""
     
@@ -350,4 +359,37 @@ def get_video_service() -> VideoServiceWrapper:
     if _video_service is None:
         _video_service = VideoServiceWrapper()
     return _video_service
+
+
+async def reset_runtime_services():
+    """Drop cached service singletons after runtime settings changes.
+
+    Old wrappers are closed gracefully (releasing their httpx clients);
+    the next request rebuilds each wrapper from the CURRENT settings.
+    Called by ModelSettingsStore.apply_to_runtime() when an event loop is
+    running, and safe to call at any other time via *_sync().
+    """
+    global _llm_service, _image_service, _video_service
+    old_llm, _llm_service = _llm_service, None
+    old_video, _video_service = _video_service, None
+    _image_service = None
+
+    for old in (old_llm, old_video):
+        if old is None:
+            continue
+        try:
+            await old.close()
+        except Exception as e:  # noqa: BLE001 - best-effort cleanup
+            logger.debug(f"Ignored error while closing stale service: {e}")
+
+    logger.info("Runtime service singletons reset (will rebuild from current settings)")
+
+
+def reset_runtime_services_sync():
+    """Sync variant of reset_runtime_services() for non-async contexts."""
+    global _llm_service, _image_service, _video_service
+    _llm_service = None
+    _image_service = None
+    _video_service = None
+    logger.info("Runtime service singletons reset (sync, no graceful close)")
 

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui';
 import {
   ConfigPanel,
   ConfigRow,
@@ -13,7 +12,6 @@ import {
 import { Input } from '@/components/ui/Input';
 import {
   ScriptGenerationConfig,
-  DEFAULT_SCRIPT_CONFIG,
   DramaGenre,
   GENRE_LABELS,
   validateScriptConfig,

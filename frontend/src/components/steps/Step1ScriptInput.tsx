@@ -12,7 +12,6 @@ import { validateYAMLScript, getSampleYAMLScript } from '@/lib/yamlValidator';
 import {
   ScriptGenerationConfig,
   DEFAULT_SCRIPT_CONFIG,
-  validateScriptConfig,
 } from '@/lib/types/scriptConfig';
 
 interface Step1ScriptInputProps {

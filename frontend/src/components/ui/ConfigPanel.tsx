@@ -176,7 +176,6 @@ interface GenreCardProps {
 }
 
 export const GenreCard: React.FC<GenreCardProps> = ({
-  genre,
   label,
   description,
   selected,

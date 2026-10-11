@@ -104,6 +104,27 @@ class BackendSettings(BaseSettings):
     log_retention: str = "30 days"
     log_format: str = "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan> - <level>{message}</level>"
     
+    # ==================== TTS (Voice) Service Configuration ====================
+    # OpenAI-compatible /audio/speech endpoint (also works with compatible gateways)
+    enable_tts: bool = False
+    tts_api_key: str = ""
+    tts_base_url: str = "https://api.openai.com/v1"
+    tts_model: str = "tts-1"
+    tts_default_voice: str = "alloy"
+    tts_default_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
+    tts_default_speed: float = 1.0
+
+    # ==================== Agent Assist Configuration ====================
+    # Agent-assisted setup powered by AragonAgent (aragon exec subprocess)
+    agent_enabled: bool = False
+    agent_provider: Literal["openai", "anthropic", "google"] = "openai"
+    agent_api_key: str = ""
+    agent_base_url: Optional[str] = None
+    agent_model: str = ""
+    agent_max_turns: int = 20
+    agent_timeout_seconds: int = 300
+    aragon_cli_path: str = "aragon"
+
     # ==================== Optional Features ====================
     enable_image_to_image: bool = True
     enable_smart_duration: bool = True

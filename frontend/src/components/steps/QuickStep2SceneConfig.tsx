@@ -4,8 +4,6 @@ import { useState } from 'react';
 import { QuickModeScene } from '@/lib/types';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
-import Input from '@/components/ui/Input';
-import Textarea from '@/components/ui/Textarea';
 import { logger } from '@/lib/logger';
 
 interface QuickStep2SceneConfigProps {

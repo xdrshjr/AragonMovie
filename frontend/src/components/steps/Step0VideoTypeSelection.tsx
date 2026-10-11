@@ -11,10 +11,8 @@ import {
   VideoSubtype,
   VIDEO_TYPE_DEFINITIONS,
   getVideoTypeDisplayName,
-  getSubtypeDisplayName,
-  getSubtypeDescription,
 } from '@/lib/types/videoTypes';
-import { ConfigPanel, ConfigRow, Checkbox, NumberInput, Select } from '@/components/ui/ConfigPanel';
+import { ConfigPanel, ConfigRow, Checkbox, Select } from '@/components/ui/ConfigPanel';
 
 interface VideoContinuityConfig {
   enableSceneContinuity: boolean;
