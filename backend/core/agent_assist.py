@@ -71,7 +71,7 @@ async def detect_aragon(cli_path: Optional[str] = None, force: bool = False) -> 
     """Locate the aragon CLI and read its version via ``aragon info --json``."""
     global _detect_cache
     now = asyncio.get_event_loop().time()
-    if not force and _detect_cache is not None and now - _detect_cache[1] < _detect_TTL:
+    if not force and _detect_cache is not None and now - _detect_cache[1] < _DETECT_TTL:
         return _detect_cache[0]
 
     info = await _detect_aragon_impl(cli_path or "aragon")

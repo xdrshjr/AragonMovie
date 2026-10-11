@@ -66,7 +66,10 @@ class ChatResponse(BaseModel):
     created: int = Field(..., description="Creation timestamp")
     model: str = Field(..., description="Model used")
     choices: List[Dict[str, Any]] = Field(..., description="Response choices")
-    usage: Optional[Dict[str, int]] = Field(None, description="Token usage statistics")
+    # NOTE: reasoning models (e.g. qwen3.8-max) nest extra dicts inside
+    # usage (prompt_tokens_details / completion_tokens_details), so values
+    # are not always plain ints.
+    usage: Optional[Dict[str, Any]] = Field(None, description="Token usage statistics")
 
 
 class PromptOptimizationRequest(BaseModel):
