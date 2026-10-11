@@ -27,17 +27,32 @@ class BackendSettings(BaseSettings):
     
     # ==================== LLM Configuration ====================
     fast_llm_api_key: str = ""
-    fast_llm_api_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    fast_llm_model: str = "qwen3-next-80b-a3b-instruct"
+    fast_llm_api_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    fast_llm_model: str = "qwen3.8-max"
     enable_prompt_optimization: bool = True
     
     judge_llm_api_key: str = ""
-    judge_llm_api_url: str = "https://ark.cn-beijing.volces.com/api/v3"
-    judge_llm_model: str = "doubao-seed-1-6-251015"
+    judge_llm_api_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    judge_llm_model: str = "qwen3.8-max"
     enable_character_consistency_judge: bool = True
     
     # ==================== Image Service Configuration ====================
-    image_service_type: Literal["doubao", "nano_banana", "midjourney"] = "doubao"
+    image_service_type: Literal["doubao", "nano_banana", "midjourney", "ali_token_plan"] = "ali_token_plan"
+
+    # ==================== Ali Token Plan (Ali Coding Plan) ====================
+    # OpenAI-compatible gateway; one key covers text/voice/image/video models
+    ali_token_plan_api_key: str = ""
+    ali_token_plan_base_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    # Image generation (wan2.7-image-pro)
+    ali_image_endpoint: str = "/api/v1/services/aigc/multimodal-generation/generation"
+    ali_image_model: str = "wan2.7-image-pro"
+    # Video generation (happyhorse-1.1 family: i2v/t2v/r2v)
+    ali_video_endpoint: str = "/api/v1/services/aigc/video-generation/video-synthesis"
+    ali_video_model: str = "happyhorse-1.1-i2v"
+    ali_video_t2v_model: str = "happyhorse-1.1-t2v"
+    ali_video_r2v_model: str = "happyhorse-1.1-r2v"
+    ali_video_default_size: str = "1280x720"
+    ali_video_default_duration: int = 5
     
     # Doubao
     doubao_api_key: str = ""
@@ -63,7 +78,7 @@ class BackendSettings(BaseSettings):
     
     # ==================== Video Service Configuration ====================
     # Video service selection
-    video_service_type: Literal["veo3", "sora2"] = "veo3"
+    video_service_type: Literal["veo3", "sora2", "ali_token_plan"] = "ali_token_plan"
 
     # Veo3 Video Generation Service
     veo3_api_key: str = ""
@@ -108,9 +123,9 @@ class BackendSettings(BaseSettings):
     # OpenAI-compatible /audio/speech endpoint (also works with compatible gateways)
     enable_tts: bool = False
     tts_api_key: str = ""
-    tts_base_url: str = "https://api.openai.com/v1"
-    tts_model: str = "tts-1"
-    tts_default_voice: str = "alloy"
+    tts_base_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    tts_model: str = "qwen-audio-3.0-tts-plus"
+    tts_default_voice: str = "Cherry"
     tts_default_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
     tts_default_speed: float = 1.0
 

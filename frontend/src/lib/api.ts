@@ -150,7 +150,7 @@ export interface ModelSettings {
   };
   voice: VoiceConfig;
   video: {
-    service_type: 'veo3' | 'sora2';
+    service_type: 'veo3' | 'sora2' | 'ali_token_plan';
     veo3: ProviderConfig & { skip_upload: boolean };
     sora2: ProviderConfig & {
       default_size: string;
@@ -159,9 +159,15 @@ export interface ModelSettings {
       watermark: boolean;
       private: boolean;
     };
+    ali_token_plan: ProviderConfig & {
+      t2v_model: string;
+      r2v_model: string;
+      default_size: string;
+      default_duration: number;
+    };
   };
   image: {
-    service_type: 'doubao' | 'nano_banana' | 'midjourney';
+    service_type: 'doubao' | 'nano_banana' | 'midjourney' | 'ali_token_plan';
     doubao: ProviderConfig & { watermark: boolean };
     nano_banana: ProviderConfig;
     midjourney: ProviderConfig & {
@@ -171,6 +177,7 @@ export interface ModelSettings {
       auto_upscale: boolean;
       upscale_index: number;
     };
+    ali_token_plan: ProviderConfig;
   };
   agent: {
     enabled: boolean;

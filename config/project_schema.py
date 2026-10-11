@@ -56,8 +56,10 @@ class CharacterConfig(BaseModel):
 
 class ImageConfig(BaseModel):
     """Image generation configuration"""
-    service: Literal["doubao", "nano_banana", "midjourney"] = Field(
-        "doubao",
+    service: Literal[
+        "doubao", "nano_banana", "midjourney", "ali_token_plan"
+    ] = Field(
+        "ali_token_plan",
         description="Image generation service"
     )
     max_concurrent: int = Field(3, ge=1, le=10, description="Maximum concurrent image generation tasks")
@@ -74,7 +76,9 @@ class ImageConfig(BaseModel):
 
 class VideoConfig(BaseModel):
     """Video generation configuration"""
-    service: Literal["veo3"] = Field("veo3", description="Video generation service")
+    service: Literal["veo3", "sora2", "ali_token_plan"] = Field(
+        "ali_token_plan", description="Video generation service"
+    )
     max_concurrent: int = Field(2, ge=1, le=5, description="Maximum concurrent video generation tasks")
     fps: int = Field(30, ge=24, le=60, description="Frames per second")
     resolution: str = Field("1920x1080", description="Video resolution")
@@ -190,6 +194,18 @@ class APIKeysConfig(BaseModel):
 
     # Video generation services
     veo3_api_key: Optional[str] = Field(None, description="Veo3 API key")
+    sora2_api_key: Optional[str] = Field(None, description="Sora2 API key")
+
+    # Ali Token Plan (shared key for text/voice/image/video)
+    ali_token_plan_api_key: Optional[str] = Field(
+        None, description="Ali Token Plan API key"
+    )
+    sora2_api_key: Optional[str] = Field(None, description="Sora2 API key")
+
+    # Ali Token Plan (shared key for text/voice/image/video)
+    ali_token_plan_api_key: Optional[str] = Field(
+        None, description="Ali Token Plan API key"
+    )
 
     # Optional services
     openai_api_key: Optional[str] = Field(None, description="OpenAI API key (optional)")

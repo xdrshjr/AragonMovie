@@ -15,7 +15,8 @@ if str(parent_dir) not in sys.path:
 
 from services.llm_service import LLMService
 from services.image_service_factory import ImageServiceFactory
-from services.veo3_service import Veo3Service, VideoGenerationError
+from services.video_service_factory import VideoServiceFactory
+from services.veo3_service import VideoGenerationError
 from backend.config import settings
 from backend.core.exceptions import ServiceException, ValidationException
 from backend.utils.logger import get_logger
@@ -237,17 +238,18 @@ class VideoServiceWrapper:
     
     def __init__(self):
         try:
-            self.service = Veo3Service(
-                api_key=settings.veo3_api_key,
-                base_url=settings.veo3_base_url,
-                model=settings.veo3_model
+            # Respect the runtime-selected service (veo3/sora2/ali_token_plan)
+            self.service = VideoServiceFactory.create_service()
+            self.service_type = settings.video_service_type
+            logger.info(
+                f"Video service initialized ({self.service_type}: "
+                f"{type(self.service).__name__}, model={self.service.model})"
             )
-            logger.info("Video service initialized (Veo3)")
         except Exception as e:
             logger.error(f"Failed to initialize video service: {e}")
             raise ServiceException(
                 f"Failed to initialize video service: {str(e)}",
-                service_name="Veo3Service",
+                service_name=f"VideoService ({settings.video_service_type})",
                 retryable=False,
                 original_error=e
             )
@@ -295,7 +297,7 @@ class VideoServiceWrapper:
             logger.info(f"Video generation success | duration={duration_time:.2f}s")
             
             return {
-                "service": "veo3",
+                "service": self.service_type,
                 "result": result,
                 "duration": duration_time
             }
@@ -308,7 +310,7 @@ class VideoServiceWrapper:
             )
             raise ServiceException(
                 f"Video generation failed: {str(e)}",
-                service_name="Veo3Service",
+                service_name=f"VideoService ({self.service_type})",
                 retryable=e.retryable,
                 original_error=e
             )
@@ -317,7 +319,7 @@ class VideoServiceWrapper:
             logger.error(f"Video generation failed | duration={duration_time:.2f}s | error={str(e)}")
             raise ServiceException(
                 f"Video generation failed: {str(e)}",
-                service_name="Veo3Service",
+                service_name=f"VideoService ({self.service_type})",
                 retryable=True,
                 original_error=e
             )

@@ -175,13 +175,20 @@ def check_api_keys(config: ProjectConfig) -> Tuple[bool, List[str]]:
 
     # Helper function to get API key from config or env
     def get_api_key(config_key: str, env_key: str) -> Optional[str]:
-        """Get API key from config first, then fall back to environment variable"""
+        """Get API key from config first, then fall back to environment
+        variables, then to the .env-backed settings singleton (pydantic
+        loads .env onto Settings, NOT into os.environ)."""
         # Check config
         config_value = getattr(config.api_keys, config_key, None)
         if config_value:
             return config_value
-        # Fall back to environment
-        return os.getenv(env_key)
+        # Fall back to process environment
+        env_value = os.getenv(env_key)
+        if env_value:
+            return env_value
+        # Fall back to settings singleton (.env / runtime settings)
+        from config.settings import settings
+        return getattr(settings, config_key, None) or None
 
     # Check image service API key
     if config.image.service == "doubao":
@@ -193,11 +200,20 @@ def check_api_keys(config: ProjectConfig) -> Tuple[bool, List[str]]:
     elif config.image.service == "midjourney":
         if not get_api_key("midjourney_api_key", "MIDJOURNEY_API_KEY"):
             missing_keys.append("MIDJOURNEY_API_KEY (for Midjourney service) - add to config.yaml api_keys section or .env file")
+    elif config.image.service == "ali_token_plan":
+        if not get_api_key("ali_token_plan_api_key", "ALI_TOKEN_PLAN_API_KEY"):
+            missing_keys.append("ALI_TOKEN_PLAN_API_KEY (for Ali Token Plan image service) - add to config.yaml api_keys section or .env file")
 
     # Check video service API key
     if config.video.service == "veo3":
         if not get_api_key("veo3_api_key", "VEO3_API_KEY"):
             missing_keys.append("VEO3_API_KEY (for Veo3 video service) - add to config.yaml api_keys section or .env file")
+    elif config.video.service == "sora2":
+        if not get_api_key("sora2_api_key", "SORA2_API_KEY"):
+            missing_keys.append("SORA2_API_KEY (for Sora2 video service) - add to config.yaml api_keys section or .env file")
+    elif config.video.service == "ali_token_plan":
+        if not get_api_key("ali_token_plan_api_key", "ALI_TOKEN_PLAN_API_KEY"):
+            missing_keys.append("ALI_TOKEN_PLAN_API_KEY (for Ali Token Plan video service) - add to config.yaml api_keys section or .env file")
 
     return len(missing_keys) == 0, missing_keys
 

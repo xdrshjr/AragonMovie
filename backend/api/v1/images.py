@@ -164,7 +164,8 @@ async def generate_image_to_image(request: ImageToImageRequest):
     Generate an image from a reference image and prompt.
     
     This endpoint performs image-to-image generation, using a reference image
-    to guide the generation process. Currently only supported by Doubao service.
+    to guide the generation process. Currently only supported by Doubao service
+    (ali_token_plan/nano_banana fall back to text-to-image when a reference is given).
     
     **Parameters:**
     - **prompt**: Text description
@@ -182,12 +183,15 @@ async def generate_image_to_image(request: ImageToImageRequest):
     """
     logger.info(f"Image-to-image request | service={request.service or 'doubao'}")
     
-    # Validate service
+    # Validate service (doubao + ali_token_plan support reference-image input)
     service_type = request.service or "doubao"
-    if service_type != "doubao":
+    if service_type not in ("doubao", "ali_token_plan"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Image-to-image generation is only supported by 'doubao' service"
+            detail=(
+                "Image-to-image generation is only supported by "
+                "'doubao' and 'ali_token_plan' services"
+            )
         )
     
     try:

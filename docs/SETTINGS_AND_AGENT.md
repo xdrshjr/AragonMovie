@@ -39,9 +39,47 @@
 | --- | --- | --- |
 | 文字 | 快速 LLM（剧本润色/提示词优化）、评审 LLM（多模态一致性评分） | api_url / api_key / model + 启用开关 |
 | 语音 | TTS（OpenAI 兼容 `/audio/speech`） | base_url / api_key / model / 音色 / 格式 / 语速 |
-| 视频 | Veo3、Sora2（运行时可切换） | base_url / endpoint / api_key / model + 各自默认参数 |
-| 图像 | 豆包、Nano Banana、Midjourney（运行时可切换） | base_url / endpoint / api_key / model |
+| 视频 | Veo3、Sora2、**Ali Coding Plan**（运行时可切换） | base_url / endpoint / api_key / model + 各自默认参数 |
+| 图像 | 豆包、Nano Banana、Midjourney、**Ali Coding Plan**（运行时可切换） | base_url / endpoint / api_key / model |
 | Agent | 驱动 AI 配置助手的大模型 | provider / base_url / api_key / model / aragon CLI 路径 |
+
+### Ali Coding Plan（阿里云 Token Plan，项目默认）
+
+项目出厂默认使用阿里云 Token Plan 网关（OpenAI 兼容模式），一个 Key 覆盖四类模型：
+
+| 类别 | 模型 | 端点（已对真实网关实测验证） |
+| --- | --- | --- |
+| 文字（快速 LLM / 评审 LLM） | `qwen3.8-max` | OpenAI 兼容 `/chat/completions` |
+| 语音（TTS） | `qwen-audio-3.0-tts-plus` | 该网关暂未开放 HTTP `/audio/speech`（见下方注意事项） |
+| 图像 | `wan2.7-image-pro` | DashScope 原生 `/api/v1/services/aigc/multimodal-generation/generation`（同步） |
+| 视频 | `happyhorse-1.1-i2v`（另有 `t2v` / `r2v` 可配置） | DashScope 原生 `/api/v1/services/aigc/video-generation/video-synthesis`（异步提交 + `/api/v1/tasks/{id}` 轮询） |
+
+网关 Base URL：`https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1`
+
+- 设置页顶部提供 **“⚡ 使用 Ali Coding Plan”** 一键预设按钮：把文字/语音/视频/图像
+  四类的 URL、模型名与 service_type 一次性填为上述默认值（不动已保存的 API Key），
+  之后逐类点“保存”即热生效。
+- 图像与视频类别各有一张 **Ali Coding Plan** 卡片（`service_type: ali_token_plan`），
+  视频卡片额外暴露 `t2v_model` / `r2v_model` 两个备选模型字段。
+- 图像与视频**共用同一个** `ali_token_plan_api_key`：在其中一类里设置或清除该 Key，
+  会自动镜像到另一类（见 `settings_store._mirror_requested_ali_key`）。
+- 服务实现：`services/ali_token_plan_service.py`，由 `ImageServiceFactory` /
+  `VideoServiceFactory` 按 `service_type=ali_token_plan` 创建：
+  - `AliTokenPlanImageService`：DashScope 原生同步接口，文生图与参考图生图
+    （`reference_image` 自动转 base64 data-uri），响应解析
+    `output.choices[0].message.content[*].image`；
+  - `AliTokenPlanVideoService`：DashScope 原生异步接口（header
+    `X-DashScope-Async: enable`，`input.media[0] = {type: first_frame, url}`），
+    本地图片自动转 base64 data-uri（网关实测接受），轮询
+    `GET /api/v1/tasks/{id}` 至 `SUCCEEDED` 后返回与 OpenAI 视频任务同构的
+    `{id, status, video_url, progress}`，`download_video()` 与 Veo3/Sora2 一致。
+  - base_url 配置保留 compatible-mode 完整 URL（供文本 LLM 使用），图像/视频
+    客户端内部自动剥离 `/compatible-mode/v1` 后缀得到原生 API 主机根。
+- **TTS 注意事项**：`qwen-audio-3.0-tts-plus` 在该网关上暂不可用——
+  HTTP `/audio/speech` 返回 InvalidParameter，WebSocket 推理通道可建连但引擎
+  报 `[cosyvoice:] Engine error [411]`（多种 voice/参数组合均复现）。
+  语音配置保留默认指向该网关，如需 TTS 请在设置页把 Base URL 换成其他
+  OpenAI 兼容网关。TTS 为可选功能，不影响主视频生成管线。
 
 ## REST API
 
@@ -132,6 +170,7 @@ aragon --version   # 验证
 ## 测试
 
 ```bash
-python -m pytest tests/test_backend -v
-# 45 个用例：store 持久化/掩码/热应用、API 语义、agent 事件解析/降级、TTS 客户端
+python -m pytest tests/test_backend tests/test_services/test_ali_token_plan_service.py -v
+# store 持久化/掩码/热应用、API 语义、agent 事件解析/降级、TTS 客户端、
+# Ali Token Plan 客户端与工厂接线、共享 Key 镜像语义
 ```

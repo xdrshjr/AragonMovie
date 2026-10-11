@@ -154,7 +154,7 @@ Choose your preferred image generation service:
 
 ```yaml
 image:
-  service: "doubao"  # or "nano_banana", "midjourney"
+  service: "ali_token_plan"  # or "doubao", "nano_banana", "midjourney"
 ```
 
 ### Video Settings

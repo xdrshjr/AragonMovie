@@ -106,11 +106,21 @@ class TestConnectionTests:
         assert r.json()[0]["success"] is False
 
     def test_video_skips_unconfigured_alternatives(self, client):
-        # only the selected provider should be reported
+        # Force a deterministic selection: veo3 without a key is the selected
+        # provider; sora2/ali_token_plan alternatives are skipped only when
+        # they have no key either (env may provide one for ali_token_plan).
+        client.put("/api/v1/settings", json={
+            "video": {
+                "service_type": "veo3",
+                "veo3": {"api_key": ""},
+                "sora2": {"api_key": ""},
+                "ali_token_plan": {"api_key": ""},
+            }
+        })
         r = client.post("/api/v1/settings/test/video")
         assert r.status_code == 200
         targets = {item["target"] for item in r.json()}
-        assert targets == {"veo3"}  # default selection, sora2 skipped (no key)
+        assert targets == {"veo3"}  # selected provider only; unkeyed alternatives skipped
 
 
 class TestAgentEndpoints:

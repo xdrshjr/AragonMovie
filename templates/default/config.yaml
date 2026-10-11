@@ -65,10 +65,11 @@ characters:
 # ==================== Image Generation ====================
 image:
   # Image generation service:
-  # - "doubao": Doubao (豆包) service (recommended, supports image-to-image)
+  # - "ali_token_plan": Ali Coding Plan / Token Plan (default, wan2.7-image-pro)
+  # - "doubao": Doubao (豆包) service (supports image-to-image)
   # - "nano_banana": Nano Banana Pro service
   # - "midjourney": Midjourney service
-  service: "doubao"
+  service: "ali_token_plan"
 
   # Maximum concurrent image generation tasks (1-10)
   # Higher values = faster generation but more API load
@@ -91,8 +92,11 @@ image:
 
 # ==================== Video Generation ====================
 video:
-  # Video generation service
-  service: "veo3"
+  # Video generation service:
+  # - "ali_token_plan": Ali Coding Plan / Token Plan (default, happyhorse-1.1-i2v)
+  # - "veo3": Veo3
+  # - "sora2": Sora2
+  service: "ali_token_plan"
 
   # Maximum concurrent video generation tasks (1-5)
   # Higher values = faster generation but more API load
@@ -103,7 +107,7 @@ video:
   fps: 30                     # Frames per second (24-60)
   resolution: "1920x1080"     # Video resolution
   motion_strength: 0.6        # Camera motion strength (0.0-1.0)
-  model: "veo_3_1"            # Video generation model
+  model: "happyhorse-1.1-i2v"  # Video generation model
 
   # Scene continuity settings
   # Enable scene-to-scene continuity for smoother transitions
@@ -167,13 +171,18 @@ enable_global_progress_bar: true
 # Priority: config.yaml > .env file
 # If not set here, will fall back to environment variables
 api_keys:
-  # Image generation services (configure the one you're using)
-  doubao_api_key: null           # Doubao (豆包) API key
+  # Ali Token Plan (Ali Coding Plan): ONE shared key for image+video (default)
+  # Usually set via .env (ALI_TOKEN_PLAN_API_KEY); leave null here to use .env.
+  ali_token_plan_api_key: null
+
+  # Other image generation services (configure the one you're using)
+  # doubao_api_key: null         # Doubao (豆包) API key
   # nano_banana_api_key: null    # Nano Banana Pro API key
   # midjourney_api_key: null     # Midjourney API key
 
-  # Video generation service
-  veo3_api_key: null             # Veo3 API key
+  # Other video generation services
+  # veo3_api_key: null           # Veo3 API key
+  # sora2_api_key: null          # Sora2 API key
 
   # Optional services
   # openai_api_key: null         # OpenAI API key (optional)

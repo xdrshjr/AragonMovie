@@ -324,7 +324,7 @@ class QuickModeService:
 
         return {
             'video': {
-                'service': 'veo3',
+                'service': settings.video_service_type,
                 'max_concurrent': settings.video_max_concurrent,
                 'fps': config.video_fps,
                 'resolution': f"{config.image_width}x{config.image_height}",

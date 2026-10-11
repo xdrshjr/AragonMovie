@@ -225,6 +225,8 @@ async def test_video(settings: ModelSettings) -> List[ConnectionTestResult]:
         providers = [
             ("veo3", video.veo3.base_url, video.veo3.api_key or "", video.veo3.model),
             ("sora2", video.sora2.base_url, video.sora2.api_key or "", video.sora2.model),
+            ("ali_token_plan", video.ali_token_plan.base_url,
+             video.ali_token_plan.api_key or "", video.ali_token_plan.model),
         ]
         results = []
         for name, url, key, model in providers:
@@ -292,6 +294,9 @@ async def test_image(settings: ModelSettings) -> List[ConnectionTestResult]:
              image.nano_banana.endpoint, image.nano_banana.model),
             ("midjourney", image.midjourney.base_url, image.midjourney.api_key or "",
              "", image.midjourney.bot_type),
+            ("ali_token_plan", image.ali_token_plan.base_url,
+             image.ali_token_plan.api_key or "", image.ali_token_plan.endpoint,
+             image.ali_token_plan.model),
         ]
         results = []
         for name, url, key, endpoint, model in providers:

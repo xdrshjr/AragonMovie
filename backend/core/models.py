@@ -89,7 +89,9 @@ class PromptOptimizationResponse(BaseModel):
 class ImageGenerationRequest(BaseModel):
     """Request to generate an image"""
     prompt: str = Field(..., min_length=1, description="Image description prompt")
-    service: Optional[Literal["doubao", "nano_banana", "midjourney"]] = Field(
+    service: Optional[
+        Literal["doubao", "nano_banana", "midjourney", "ali_token_plan"]
+    ] = Field(
         None, 
         description="Image service to use (default: from config)"
     )
@@ -108,9 +110,9 @@ class ImageToImageRequest(BaseModel):
     """Request for image-to-image generation"""
     prompt: str = Field(..., min_length=1, description="Image description prompt")
     image: str = Field(..., description="Base64 encoded reference image or URL")
-    service: Optional[Literal["doubao"]] = Field(
+    service: Optional[Literal["doubao", "ali_token_plan"]] = Field(
         None,
-        description="Image service (only doubao supports i2i)"
+        description="Image service (doubao / ali_token_plan support i2i)"
     )
     width: int = Field(1920, ge=64, le=4096)
     height: int = Field(1080, ge=64, le=4096)

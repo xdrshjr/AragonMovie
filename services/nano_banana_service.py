@@ -13,6 +13,9 @@ import logging
 class NanoBananaService:
     """Nano Banana Pro API服务封装 - 图片生成"""
 
+    # 子类可覆盖的服务名（用于错误信息展示）
+    SERVICE_NAME = "Nano Banana Pro"
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -213,7 +216,7 @@ class NanoBananaService:
             # 抛出增强的ServiceException
             raise ServiceException(
                 message=error_message,
-                service_name="Nano Banana Pro",
+                service_name=self.SERVICE_NAME,
                 retryable=e.response.status_code >= 500,  # 5xx错误可重试
                 original_error=e,
                 error_code=error_code,

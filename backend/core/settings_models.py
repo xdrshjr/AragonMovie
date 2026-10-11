@@ -29,15 +29,15 @@ from typing import Optional, List, Literal
 class FastLLMConfig(BaseModel):
     """Fast LLM for script polishing / prompt optimization"""
     api_key: Optional[str] = Field(None, description="API key (write-only)")
-    api_url: str = Field("https://dashscope.aliyuncs.com/compatible-mode/v1")
-    model: str = Field("qwen-max-latest")
+    api_url: str = Field("https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
+    model: str = Field("qwen3.8-max")
 
 
 class JudgeLLMConfig(BaseModel):
     """Multimodal judge LLM for character-consistency scoring"""
     api_key: Optional[str] = Field(None, description="API key (write-only)")
-    api_url: str = Field("https://ark.cn-beijing.volces.com/api/v3")
-    model: str = Field("doubao-seed-1-6-251015")
+    api_url: str = Field("https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
+    model: str = Field("qwen3.8-max")
 
 
 class TextSettings(BaseModel):
@@ -53,9 +53,9 @@ class TextSettings(BaseModel):
 class VoiceSettings(BaseModel):
     enabled: bool = Field(False, description="Enable the TTS service")
     api_key: Optional[str] = Field(None, description="API key (write-only)")
-    base_url: str = Field("https://api.openai.com/v1")
-    model: str = Field("tts-1")
-    default_voice: str = Field("alloy")
+    base_url: str = Field("https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
+    model: str = Field("qwen-audio-3.0-tts-plus")
+    default_voice: str = Field("Cherry")
     default_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
     default_speed: float = Field(1.0, ge=0.25, le=4.0)
 
@@ -83,10 +83,29 @@ class Sora2Config(BaseModel):
     private: bool = False
 
 
+class AliTokenPlanVideoConfig(BaseModel):
+    """Ali Token Plan video generation (happyhorse-1.1 family, OpenAI-compatible).
+
+    ``model`` is the image-to-video model used by the pipeline; ``t2v_model``
+    and ``r2v_model`` are exposed for text-to-video / reference-to-video use.
+    """
+    api_key: Optional[str] = Field(None, description="API key (write-only)")
+    base_url: str = Field("https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
+    endpoint: str = Field("/api/v1/services/aigc/video-generation/video-synthesis")
+    model: str = Field("happyhorse-1.1-i2v")
+    t2v_model: str = Field("happyhorse-1.1-t2v")
+    r2v_model: str = Field("happyhorse-1.1-r2v")
+    default_size: str = Field("1280x720")
+    default_duration: int = Field(5, ge=1, le=60)
+
+
 class VideoSettings(BaseModel):
-    service_type: Literal["veo3", "sora2"] = "veo3"
+    service_type: Literal["veo3", "sora2", "ali_token_plan"] = "ali_token_plan"
     veo3: Veo3Config = Field(default_factory=Veo3Config)
     sora2: Sora2Config = Field(default_factory=Sora2Config)
+    ali_token_plan: AliTokenPlanVideoConfig = Field(
+        default_factory=AliTokenPlanVideoConfig
+    )
 
 
 # ==================== Image ====================
@@ -107,6 +126,14 @@ class NanoBananaConfig(BaseModel):
     model: str = Field("gemini-3-pro-image-preview")
 
 
+class AliTokenPlanImageConfig(BaseModel):
+    """Ali Token Plan image generation (wan2.7-image-pro, OpenAI-compatible)"""
+    api_key: Optional[str] = Field(None, description="API key (write-only)")
+    base_url: str = Field("https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
+    endpoint: str = Field("/api/v1/services/aigc/multimodal-generation/generation")
+    model: str = Field("wan2.7-image-pro")
+
+
 class MidjourneyConfig(BaseModel):
     api_key: Optional[str] = Field(None, description="API key (write-only)")
     base_url: str = Field("https://api.kuai.host")
@@ -118,10 +145,15 @@ class MidjourneyConfig(BaseModel):
 
 
 class ImageSettings(BaseModel):
-    service_type: Literal["doubao", "nano_banana", "midjourney"] = "doubao"
+    service_type: Literal[
+        "doubao", "nano_banana", "midjourney", "ali_token_plan"
+    ] = "ali_token_plan"
     doubao: DoubaoConfig = Field(default_factory=DoubaoConfig)
     nano_banana: NanoBananaConfig = Field(default_factory=NanoBananaConfig)
     midjourney: MidjourneyConfig = Field(default_factory=MidjourneyConfig)
+    ali_token_plan: AliTokenPlanImageConfig = Field(
+        default_factory=AliTokenPlanImageConfig
+    )
 
 
 # ==================== Agent ====================

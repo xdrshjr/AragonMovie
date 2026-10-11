@@ -64,6 +64,12 @@ async def lifespan(app: FastAPI):
         logger.debug(f"  - Sora2 Default Duration: {settings.sora2_default_duration}s")
         if settings.sora2_default_style:
             logger.debug(f"  - Sora2 Default Style: {settings.sora2_default_style}")
+    elif settings.video_service_type == "ali_token_plan":
+        logger.info(
+            f"Video Service: Ali Token Plan (model={settings.ali_video_model})"
+        )
+        logger.debug(f"  - Ali Base URL: {settings.ali_token_plan_base_url}")
+        logger.debug(f"  - Ali Endpoint: {settings.ali_video_endpoint}")
     else:
         logger.warning(f"Unknown video service type: {settings.video_service_type}")
 
@@ -259,6 +265,10 @@ if __name__ == "__main__":
         logger.info(f"Video Service: Veo3 (model={settings.veo3_model})")
     elif settings.video_service_type == "sora2":
         logger.info(f"Video Service: Sora2 (model={settings.sora2_model})")
+    elif settings.video_service_type == "ali_token_plan":
+        logger.info(
+            f"Video Service: Ali Token Plan (model={settings.ali_video_model})"
+        )
     else:
         logger.warning(f"Unknown video service type: {settings.video_service_type}")
 

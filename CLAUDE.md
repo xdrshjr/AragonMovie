@@ -426,6 +426,32 @@ wrappers are reset (`backend/core/service_wrapper.py::reset_runtime_services`).
 - `backend/core/settings_store.py` - ModelSettingsStore (persist/mask/apply/reload)
 - `backend/core/settings_models.py` - five-category Pydantic models; `api_key` is
   write-only: absent/null = keep, `""` = clear, string = replace
+- **Ali Coding Plan (Ali Token Plan)** is the DEFAULT provider for text/voice/
+  image/video: gateway `https://token-plan.cn-beijing.maas.aliyuncs.com/
+  compatible-mode/v1`, models `qwen3.8-max` (fast+judge LLM, OpenAI-compatible
+  chat), `qwen-audio-3.0-tts-plus` (TTS), `wan2.7-image-pro` (image,
+  `service_type=ali_token_plan`), `happyhorse-1.1-i2v/t2v/r2v` (video,
+  `service_type=ali_token_plan`). Clients live in
+  `services/ali_token_plan_service.py`, created by `ImageServiceFactory` /
+  `VideoServiceFactory`. NOTE: image/video use DashScope-NATIVE protocols
+  (live-verified against the gateway): image = sync POST
+  `/api/v1/services/aigc/multimodal-generation/generation` (messages content
+  `[{image?},{text}]`, params `size: "W*H"`, parse
+  `output.choices[0].message.content[*].image`); video = async POST
+  `/api/v1/services/aigc/video-generation/video-synthesis` with header
+  `X-DashScope-Async: enable`, body `input.media[0]={type: "first_frame",
+  url}` + `parameters.duration`, poll `GET /api/v1/tasks/{id}` until
+  `SUCCEEDED`, return OpenAI-shaped `{id,status,video_url,progress}`. Local
+  images are sent as base64 data-URIs (accepted by the gateway); the
+  `/compatible-mode/v1` suffix is stripped automatically to reach the native
+  host root. TTS is NOT yet usable on this gateway (HTTP `/audio/speech`
+  rejected with "url error"; WS inference connects but the engine fails with
+  `[cosyvoice:] Engine error [411]`) - voice is optional for the pipeline;
+  point voice settings at another OpenAI-compatible gateway if needed. Image
+  and video share ONE `ali_token_plan_api_key`; setting/clearing it in either
+  category mirrors to the other (`settings_store._mirror_requested_ali_key`).
+  The Settings UI has a one-click "Use Ali Coding Plan" preset button. Judge
+  LLM auto-detects Ark `/responses` vs OpenAI `chat/completions` by api_url.
 - `backend/api/v1/settings.py` - GET/PUT `/api/v1/settings`, POST `.../test/{category}`
   (text|voice|video|image|agent), GET `.../agent/status`, POST `.../agent/chat` (SSE)
 - `services/tts_service.py` + `backend/api/v1/tts.py` - OpenAI-compatible TTS

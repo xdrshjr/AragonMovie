@@ -76,7 +76,7 @@ class TestPersistenceAndHotApply:
         store.file_path.parent.mkdir(parents=True, exist_ok=True)
         store.file_path.write_text("{not json", encoding="utf-8")
         loaded = store.load()
-        assert loaded.video.service_type in ("veo3", "sora2")
+        assert loaded.video.service_type in ("veo3", "sora2", "ali_token_plan")
 
 
 class TestWriteOnlyKeys:

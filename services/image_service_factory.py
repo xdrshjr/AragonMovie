@@ -4,7 +4,7 @@ from config.settings import settings
 import logging
 
 
-ImageServiceType = Literal["doubao", "nano_banana"]
+ImageServiceType = Literal["doubao", "nano_banana", "midjourney", "ali_token_plan"]
 
 
 class ImageServiceFactory:
@@ -54,10 +54,20 @@ class ImageServiceFactory:
                 **kwargs
             )
 
+        elif service_type == "ali_token_plan":
+            from services.ali_token_plan_service import AliTokenPlanImageService
+            ImageServiceFactory._logger.info(
+                "Creating Ali Token Plan image service instance"
+            )
+            return AliTokenPlanImageService(
+                api_key=api_key or settings.ali_token_plan_api_key,
+                **kwargs
+            )
+
         else:
             raise ValueError(
                 f"Unsupported image service type: {service_type}. "
-                f"Supported types: 'doubao', 'nano_banana'"
+                f"Supported types: 'doubao', 'nano_banana', 'ali_token_plan'"
             )
 
     @staticmethod
@@ -68,7 +78,7 @@ class ImageServiceFactory:
         Returns:
             服务类型列表
         """
-        return ["doubao", "nano_banana"]
+        return ["doubao", "nano_banana", "ali_token_plan"]
 
     @staticmethod
     def supports_image_to_image(service_type: Optional[ImageServiceType] = None) -> bool:
@@ -86,6 +96,10 @@ class ImageServiceFactory:
 
         # 豆包支持图生图
         if service_type == "doubao":
+            return True
+
+        # Ali Token Plan (wan2.7-image-pro) 原生支持参考图输入
+        if service_type == "ali_token_plan":
             return True
 
         # Nano Banana目前不支持图生图（如果后续支持，可以修改这里）

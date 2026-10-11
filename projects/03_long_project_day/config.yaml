@@ -33,7 +33,7 @@ characters:
 
 # ==================== 图像生成 ====================
 image:
-  service: "doubao"  # 使用豆包服务
+  service: "ali_token_plan"  # 使用豆包服务
   max_concurrent: 3
   width: 1920
   height: 1080
@@ -50,7 +50,7 @@ image:
 
 # ==================== 视频生成 ====================
 video:
-  service: "veo3"
+  service: "ali_token_plan"
   max_concurrent: 2
   fps: 30
   resolution: "1920x1080"

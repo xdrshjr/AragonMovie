@@ -23,6 +23,9 @@ class VideoGenerationError(Exception):
 class Veo3Service:
     """Veo3 API服务封装 - 图片到视频转换"""
 
+    # 子类可覆盖的服务名（用于错误信息展示）
+    SERVICE_NAME = "Veo3"
+
     def __init__(
         self,
         api_key: Optional[str] = None,
@@ -202,7 +205,7 @@ class Veo3Service:
                 # 抛出增强的ServiceException
                 raise ServiceException(
                     message=error_message,
-                    service_name="Veo3",
+                    service_name=self.SERVICE_NAME,
                     retryable=e.response.status_code >= 500,  # 5xx错误可重试
                     original_error=e,
                     error_code=error_code,
@@ -348,7 +351,7 @@ class Veo3Service:
                 # 抛出增强的ServiceException而不是VideoGenerationError
                 raise ServiceException(
                     message=error_message,
-                    service_name="Veo3",
+                    service_name=self.SERVICE_NAME,
                     retryable=retryable,
                     original_error=None,
                     error_code=error_code,

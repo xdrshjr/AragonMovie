@@ -6,8 +6,23 @@ from typing import Optional, List, Literal
 class Settings(BaseSettings):
     """应用配置"""
 
-    # 图片生成服务选择 (默认使用豆包)
-    image_service_type: Literal["doubao", "nano_banana"] = "doubao"
+    # 图片生成服务选择 (默认使用阿里云 Token Plan)
+    image_service_type: Literal["doubao", "nano_banana", "midjourney", "ali_token_plan"] = "ali_token_plan"
+
+    # 阿里云 Token Plan (Ali Coding Plan) 配置
+    # OpenAI 兼容网关，一个 Key 覆盖文本/语音/图像/视频模型
+    ali_token_plan_api_key: str = ""
+    ali_token_plan_base_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    # 图像生成 (wan2.7-image-pro)
+    ali_image_endpoint: str = "/api/v1/services/aigc/multimodal-generation/generation"
+    ali_image_model: str = "wan2.7-image-pro"
+    # 视频生成 (happyhorse-1.1 系列: i2v=图生视频, t2v=文生视频, r2v=参考生视频)
+    ali_video_endpoint: str = "/api/v1/services/aigc/video-generation/video-synthesis"
+    ali_video_model: str = "happyhorse-1.1-i2v"
+    ali_video_t2v_model: str = "happyhorse-1.1-t2v"
+    ali_video_r2v_model: str = "happyhorse-1.1-r2v"
+    ali_video_default_size: str = "1280x720"
+    ali_video_default_duration: int = 5
 
     # Doubao (豆包) 配置
     doubao_api_key: str = ""
@@ -22,8 +37,8 @@ class Settings(BaseSettings):
     nano_banana_endpoint: str = "/generate"  # API 端点路径
     nano_banana_model: str = "dall-e-3"  # 图像生成模型名称
 
-    # 视频生成服务选择 (默认使用veo3)
-    video_service_type: Literal["veo3", "sora2"] = "veo3"
+    # 视频生成服务选择 (默认使用阿里云 Token Plan happyhorse)
+    video_service_type: Literal["veo3", "sora2", "ali_token_plan"] = "ali_token_plan"
 
     # Veo3配置
     veo3_api_key: str = ""
@@ -109,23 +124,23 @@ class Settings(BaseSettings):
 
     # LLM配置（用于提示词优化）
     fast_llm_api_key: str = ""
-    fast_llm_api_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
-    fast_llm_model: str = "qwen3-next-80b-a3b-instruct"
+    fast_llm_api_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    fast_llm_model: str = "qwen3.8-max"
     enable_prompt_optimization: bool = True  # 是否启用提示词优化
 
     # Judge LLM配置（用于图片质量评分）
     judge_llm_api_key: str = ""
-    judge_llm_api_url: str = "https://ark.cn-beijing.volces.com/api/v3"
-    judge_llm_model: str = "doubao-seed-1-6-251015"
+    judge_llm_api_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    judge_llm_model: str = "qwen3.8-max"
     enable_character_consistency_judge: bool = True  # 是否启用角色一致性评分
     candidate_images_per_scene: int = 3  # 每个场景生成的候选图片数量（1-5）
     judge_temperature: float = 0.3  # Judge LLM的温度参数（越低越稳定）
 
     # 可选配置
     tts_api_key: str = ""
-    tts_base_url: str = "https://api.openai.com/v1"
-    tts_model: str = "tts-1"
-    tts_default_voice: str = "alloy"
+    tts_base_url: str = "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1"
+    tts_model: str = "qwen-audio-3.0-tts-plus"
+    tts_default_voice: str = "Cherry"
     tts_default_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
     tts_default_speed: float = 1.0
     enable_tts: bool = False

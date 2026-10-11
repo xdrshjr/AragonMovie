@@ -41,6 +41,43 @@ const CATEGORIES: Array<{ key: Category; label: string }> = [
   { key: 'agent', label: 'Agent 助手' },
 ];
 
+/** Ali Coding Plan (Token Plan) one-click preset values. */
+const ALI_TOKEN_PLAN_URL =
+  'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1';
+
+const ALI_CODING_PLAN_PRESET = {
+  text: {
+    fast_llm: { api_url: ALI_TOKEN_PLAN_URL, model: 'qwen3.8-max' },
+    judge_llm: { api_url: ALI_TOKEN_PLAN_URL, model: 'qwen3.8-max' },
+  },
+  voice: {
+    enabled: true,
+    base_url: ALI_TOKEN_PLAN_URL,
+    model: 'qwen-audio-3.0-tts-plus',
+    default_voice: 'Cherry',
+  },
+  video: {
+    service_type: 'ali_token_plan',
+    ali_token_plan: {
+      base_url: ALI_TOKEN_PLAN_URL,
+      endpoint: '/api/v1/services/aigc/video-generation/video-synthesis',
+      model: 'happyhorse-1.1-i2v',
+      t2v_model: 'happyhorse-1.1-t2v',
+      r2v_model: 'happyhorse-1.1-r2v',
+      default_size: '1280x720',
+      default_duration: 5,
+    },
+  },
+  image: {
+    service_type: 'ali_token_plan',
+    ali_token_plan: {
+      base_url: ALI_TOKEN_PLAN_URL,
+      endpoint: '/api/v1/services/aigc/multimodal-generation/generation',
+      model: 'wan2.7-image-pro',
+    },
+  },
+} as const;
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<ModelSettings | null>(null);
   const [agentStatus, setAgentStatus] = useState<AgentStatus | null>(null);
@@ -128,6 +165,35 @@ export default function SettingsPage() {
       node = (node as Draft)[part];
     }
     return node;
+  };
+
+  /** Deep-merge a preset onto one category draft; never touches api_key. */
+  const mergeDraft = (base: Draft, overlay: Record<string, unknown>): Draft => {
+    const out: Draft = { ...base };
+    for (const [k, v] of Object.entries(overlay)) {
+      if (v && typeof v === 'object' && !Array.isArray(v)) {
+        out[k] = mergeDraft((out[k] as Draft) ?? {}, v as Record<string, unknown>);
+      } else if (k !== 'api_key') {
+        // api_key is write-only: keep whatever the user already typed/stored
+        out[k] = v;
+      }
+    }
+    return out;
+  };
+
+  const applyAliCodingPlanPreset = () => {
+    setDrafts((prev) => {
+      const next = { ...prev };
+      for (const [cat, preset] of Object.entries(ALI_CODING_PLAN_PRESET)) {
+        next[cat] = mergeDraft(
+          (prev[cat] ?? {}) as Draft,
+          preset as unknown as Record<string, unknown>
+        );
+      }
+      return next;
+    });
+    setDirty({ text: true, voice: true, video: true, image: true });
+    setNotice('已填入 Ali Coding Plan 预设（API Key 使用后端 .env 默认值），请逐类保存生效');
   };
 
   const saveCategory = async (category: Category) => {
@@ -271,11 +337,20 @@ export default function SettingsPage() {
       <Header />
       <main className="flex-1 px-6 py-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-text-primary mb-1">设置中心</h1>
-            <p className="text-text-secondary">
-              随时配置文字 / 语音 / 视频 / 图像 / Agent 模型服务的 URL、凭证与模型，保存后即时生效
-            </p>
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-text-primary mb-1">设置中心</h1>
+              <p className="text-text-secondary">
+                随时配置文字 / 语音 / 视频 / 图像 / Agent 模型服务的 URL、凭证与模型，保存后即时生效
+              </p>
+            </div>
+            <Button
+              variant="secondary"
+              onClick={applyAliCodingPlanPreset}
+              title="一键填入阿里云 Token Plan 网关地址与各模型默认值（API Key 沿用已保存配置）"
+            >
+              ⚡ 使用 Ali Coding Plan
+            </Button>
           </div>
 
           {notice && (
@@ -353,7 +428,7 @@ export default function SettingsPage() {
             <TabsContent value="voice">
               <ProviderCard
                 title="语音合成 (TTS)"
-                subtitle="OpenAI 兼容 /audio/speech 接口（OpenAI / 硅基流动 / 各类网关均可）"
+                subtitle="OpenAI 兼容 /audio/speech 接口（OpenAI / 硅基流动 / 各类网关均可；注：Ali Token Plan 网关的 qwen-audio-3.0-tts-plus 暂未开放 HTTP 合成接口，如遇失败请改用其他 TTS 网关）"
                 fields={[
                   { key: 'base_url', label: 'Base URL', placeholder: 'https://api.openai.com/v1' },
                   { key: 'api_key', label: 'API Key', secret: true },
@@ -400,8 +475,8 @@ export default function SettingsPage() {
                 <label className="block text-sm font-medium text-text-primary mb-2">
                   默认视频服务
                 </label>
-                <div className="flex gap-2">
-                  {(['veo3', 'sora2'] as const).map((svc) => (
+                <div className="flex gap-2 flex-wrap">
+                  {(['veo3', 'sora2', 'ali_token_plan'] as const).map((svc) => (
                     <button
                       key={svc}
                       type="button"
@@ -412,7 +487,7 @@ export default function SettingsPage() {
                           : 'border-[var(--color-border)] text-text-secondary'
                       }`}
                     >
-                      {svc === 'veo3' ? 'Veo3' : 'Sora2'}
+                      {svc === 'veo3' ? 'Veo3' : svc === 'sora2' ? 'Sora2' : 'Ali Coding Plan'}
                     </button>
                   ))}
                 </div>
@@ -465,6 +540,36 @@ export default function SettingsPage() {
                 testing={testingCat === 'video'}
                 testResult={resultFor('video', 'sora2')}
               />
+
+              <ProviderCard
+                title="Ali Coding Plan (Token Plan)"
+                subtitle="阿里云 Token Plan 网关（DashScope 原生异步任务，happyhorse-1.1 系列：图生视频/文生视频/参考生视频）"
+                badge={getField('video', 'service_type') === 'ali_token_plan' ? '当前使用' : undefined}
+                fields={[
+                  { key: 'base_url', label: 'Base URL', placeholder: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1' },
+                  { key: 'endpoint', label: 'Endpoint', placeholder: '/api/v1/services/aigc/video-generation/video-synthesis' },
+                  { key: 'api_key', label: 'API Key', secret: true },
+                  { key: 'model', label: '图生视频模型 (i2v)', placeholder: 'happyhorse-1.1-i2v' },
+                  { key: 't2v_model', label: '文生视频模型 (t2v)', placeholder: 'happyhorse-1.1-t2v' },
+                  { key: 'r2v_model', label: '参考生视频模型 (r2v)', placeholder: 'happyhorse-1.1-r2v' },
+                  { key: 'default_size', label: '默认分辨率', placeholder: '1280x720' },
+                  { key: 'default_duration', label: '默认时长（秒）', type: 'number' },
+                ]}
+                values={{
+                  base_url: getField('video', 'ali_token_plan.base_url'),
+                  endpoint: getField('video', 'ali_token_plan.endpoint'),
+                  api_key: getField('video', 'ali_token_plan.api_key'),
+                  model: getField('video', 'ali_token_plan.model'),
+                  t2v_model: getField('video', 'ali_token_plan.t2v_model'),
+                  r2v_model: getField('video', 'ali_token_plan.r2v_model'),
+                  default_size: getField('video', 'ali_token_plan.default_size'),
+                  default_duration: getField('video', 'ali_token_plan.default_duration'),
+                }}
+                maskedKey={secretPlaceholder(settings.video.ali_token_plan?.api_key)}
+                onChange={(k, v) => setField('video', `ali_token_plan.${k}`, v)}
+                testing={testingCat === 'video'}
+                testResult={resultFor('video', 'ali_token_plan')}
+              />
               <SaveBar category="video" />
             </TabsContent>
 
@@ -475,7 +580,7 @@ export default function SettingsPage() {
                   默认图像服务
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['doubao', 'nano_banana', 'midjourney'] as const).map((svc) => (
+                  {(['ali_token_plan', 'doubao', 'nano_banana', 'midjourney'] as const).map((svc) => (
                     <button
                       key={svc}
                       type="button"
@@ -486,7 +591,13 @@ export default function SettingsPage() {
                           : 'border-[var(--color-border)] text-text-secondary'
                       }`}
                     >
-                      {svc === 'nano_banana' ? 'Nano Banana' : svc === 'doubao' ? '豆包' : 'Midjourney'}
+                      {svc === 'nano_banana'
+                        ? 'Nano Banana'
+                        : svc === 'doubao'
+                          ? '豆包'
+                          : svc === 'ali_token_plan'
+                            ? 'Ali Coding Plan'
+                            : 'Midjourney'}
                     </button>
                   ))}
                 </div>
@@ -566,6 +677,28 @@ export default function SettingsPage() {
                 onChange={(k, v) => setField('image', `midjourney.${k}`, v)}
                 testing={testingCat === 'image'}
                 testResult={resultFor('image', 'midjourney')}
+              />
+
+              <ProviderCard
+                title="Ali Coding Plan (Token Plan)"
+                subtitle="阿里云 Token Plan 网关（DashScope 原生接口，wan2.7-image-pro 文生图 + 参考图生图）"
+                badge={getField('image', 'service_type') === 'ali_token_plan' ? '当前使用' : undefined}
+                fields={[
+                  { key: 'base_url', label: 'Base URL', placeholder: 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1' },
+                  { key: 'endpoint', label: 'Endpoint', placeholder: '/api/v1/services/aigc/multimodal-generation/generation' },
+                  { key: 'api_key', label: 'API Key', secret: true },
+                  { key: 'model', label: '模型', placeholder: 'wan2.7-image-pro' },
+                ]}
+                values={{
+                  base_url: getField('image', 'ali_token_plan.base_url'),
+                  endpoint: getField('image', 'ali_token_plan.endpoint'),
+                  api_key: getField('image', 'ali_token_plan.api_key'),
+                  model: getField('image', 'ali_token_plan.model'),
+                }}
+                maskedKey={secretPlaceholder(settings.image.ali_token_plan?.api_key)}
+                onChange={(k, v) => setField('image', `ali_token_plan.${k}`, v)}
+                testing={testingCat === 'image'}
+                testResult={resultFor('image', 'ali_token_plan')}
               />
               <SaveBar category="image" />
             </TabsContent>

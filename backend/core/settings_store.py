@@ -77,6 +77,14 @@ FIELD_MAP: List[Tuple[str, str]] = [
     ("video.sora2.default_style", "sora2_default_style"),
     ("video.sora2.watermark", "sora2_watermark"),
     ("video.sora2.private", "sora2_private"),
+    ("video.ali_token_plan.api_key", "ali_token_plan_api_key"),
+    ("video.ali_token_plan.base_url", "ali_token_plan_base_url"),
+    ("video.ali_token_plan.endpoint", "ali_video_endpoint"),
+    ("video.ali_token_plan.model", "ali_video_model"),
+    ("video.ali_token_plan.t2v_model", "ali_video_t2v_model"),
+    ("video.ali_token_plan.r2v_model", "ali_video_r2v_model"),
+    ("video.ali_token_plan.default_size", "ali_video_default_size"),
+    ("video.ali_token_plan.default_duration", "ali_video_default_duration"),
     # image
     ("image.service_type", "image_service_type"),
     ("image.doubao.api_key", "doubao_api_key"),
@@ -95,6 +103,10 @@ FIELD_MAP: List[Tuple[str, str]] = [
     ("image.midjourney.max_poll_attempts", "midjourney_max_poll_attempts"),
     ("image.midjourney.auto_upscale", "midjourney_auto_upscale"),
     ("image.midjourney.upscale_index", "midjourney_upscale_index"),
+    ("image.ali_token_plan.api_key", "ali_token_plan_api_key"),
+    ("image.ali_token_plan.base_url", "ali_token_plan_base_url"),
+    ("image.ali_token_plan.endpoint", "ali_image_endpoint"),
+    ("image.ali_token_plan.model", "ali_image_model"),
     # agent
     ("agent.enabled", "agent_enabled"),
     ("agent.provider", "agent_provider"),
@@ -116,6 +128,8 @@ SECRET_PATHS = {
     "image.doubao.api_key",
     "image.nano_banana.api_key",
     "image.midjourney.api_key",
+    "image.ali_token_plan.api_key",
+    "video.ali_token_plan.api_key",
     "agent.api_key",
 }
 
@@ -191,6 +205,7 @@ class ModelSettingsStore:
                 payload = json.loads(raw.decode("utf-8"))
                 stored = payload.get("settings", payload)
                 merged = _merge_write_only(env_settings.model_dump(), stored)
+                _cross_fill_ali_key(merged)
                 parsed = ModelSettings.model_validate(merged)
                 self._current = parsed
                 self._file_hash = hashlib.sha256(raw).hexdigest()
@@ -277,7 +292,9 @@ class ModelSettingsStore:
                 incoming_dump = incoming.model_dump()
                 _merge_category(current_cat, incoming_dump)
 
-            ModelSettings.model_validate(merged.model_dump())  # validate result
+            merged_dump = merged.model_dump()
+            _mirror_requested_ali_key(request, merged_dump)
+            merged = ModelSettings.model_validate(merged_dump)  # validate result
             self.save(merged)
             self.apply_to_runtime(merged)
             return merged
@@ -299,6 +316,7 @@ class ModelSettingsStore:
                 stored = payload.get("settings", payload)
                 env_settings = self.settings_from_env()
                 merged = _merge_write_only(env_settings.model_dump(), stored)
+                _cross_fill_ali_key(merged)
                 parsed = ModelSettings.model_validate(merged)
             except Exception as e:  # noqa: BLE001
                 logger.error(f"Externally edited settings file is invalid, ignored: {e}")
@@ -338,6 +356,75 @@ def _set_path_nested(data: Dict, dotted: str, value) -> None:
     for part in parts[:-1]:
         node = node.setdefault(part, {})
     node[parts[-1]] = value
+
+
+ALI_KEY_PATHS = (
+    "video.ali_token_plan.api_key",
+    "image.ali_token_plan.api_key",
+)
+
+
+def _cross_fill_ali_key(data: Dict) -> None:
+    """Ali Token Plan uses ONE key for every modality. When the user (or the
+    agent) sets it in one category, mirror it into the others so image and
+    video never fail with an empty key after a partial update."""
+    values = []
+    for path in ALI_KEY_PATHS:
+        node = data
+        parts = path.split(".")
+        for part in parts[:-1]:
+            node = node.get(part) if isinstance(node, dict) else None
+            if node is None:
+                break
+        if isinstance(node, dict):
+            key = node.get(parts[-1])
+            if key:
+                values.append(key)
+    if not values:
+        return
+    shared = max(values, key=len)
+    for path in ALI_KEY_PATHS:
+        node = data
+        parts = path.split(".")
+        for part in parts[:-1]:
+            node = node.setdefault(part, {})
+        if not node.get(parts[-1]):
+            node[parts[-1]] = shared
+
+
+def _mirror_requested_ali_key(
+    request: "SettingsUpdateRequest", data: Dict
+) -> None:
+    """Mirror the shared Ali Token Plan key only when THIS request set one.
+
+    ``_cross_fill_ali_key`` is for load paths (env + file merge). On the API
+    update path an explicit ``""`` must clear the key everywhere, and an
+    omitted key must not resurrect it into the sibling category.
+    """
+    requested = None
+    for category in ("video", "image"):
+        incoming = getattr(request, category)
+        if incoming is None:
+            continue
+        ali_cfg = getattr(incoming, "ali_token_plan", None)
+        if ali_cfg is None:
+            continue
+        raw_dump = incoming.model_dump(exclude_unset=True)
+        ali_raw = raw_dump.get("ali_token_plan") or {}
+        if "api_key" not in ali_raw:
+            continue
+        key = ali_cfg.api_key
+        if key and key == mask_key(key):
+            continue  # echoed masked value: keep as-is, do not mirror
+        requested = key or ""
+    if requested is None:
+        return
+    for path in ALI_KEY_PATHS:
+        node = data
+        parts = path.split(".")
+        for part in parts[:-1]:
+            node = node.setdefault(part, {})
+        node[parts[-1]] = requested
 
 
 def _merge_write_only(base_dump: Dict, stored: Dict) -> Dict:

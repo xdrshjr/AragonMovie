@@ -33,6 +33,7 @@ import logging
 
 from services.veo3_service import Veo3Service
 from services.sora2_service import Sora2Service
+from services.ali_token_plan_service import AliTokenPlanVideoService
 from config.settings import settings
 
 
@@ -53,13 +54,13 @@ class VideoServiceFactory:
         SUPPORTED_SERVICES (list): List of supported service types
     """
 
-    SUPPORTED_SERVICES = ["veo3", "sora2"]
+    SUPPORTED_SERVICES = ["veo3", "sora2", "ali_token_plan"]
 
     @staticmethod
     def create_service(
         service_type: Optional[str] = None,
         config_override: Optional[Dict[str, Any]] = None
-    ) -> Union[Veo3Service, Sora2Service]:
+    ) -> Union[Veo3Service, Sora2Service, AliTokenPlanVideoService]:
         """Create a video generation service instance
 
         This method creates and returns a video generation service instance
@@ -129,6 +130,10 @@ class VideoServiceFactory:
             return VideoServiceFactory._create_veo3_service(config_override, logger)
         elif service_type == "sora2":
             return VideoServiceFactory._create_sora2_service(config_override, logger)
+        elif service_type == "ali_token_plan":
+            return VideoServiceFactory._create_ali_token_plan_service(
+                config_override, logger
+            )
         else:
             # This should never happen due to validation above, but kept for safety
             error_msg = f"Unsupported video service type: {service_type}"
@@ -252,6 +257,52 @@ class VideoServiceFactory:
             f"model={service.model}, base_url={service.base_url}"
         )
 
+        return service
+
+    @staticmethod
+    def _create_ali_token_plan_service(
+        config_override: Dict[str, Any],
+        logger: logging.Logger
+    ) -> AliTokenPlanVideoService:
+        """Create AliTokenPlanVideoService instance with configuration
+
+        Args:
+            config_override: Configuration parameters to override
+                (api_key, base_url, endpoint, model, default_size,
+                default_duration)
+            logger: Logger instance for logging
+
+        Returns:
+            AliTokenPlanVideoService: Configured service instance
+
+        Raises:
+            ValueError: If the Ali Token Plan API key is not configured
+        """
+        api_key = (
+            config_override.get("api_key")
+            or settings.ali_token_plan_api_key
+        )
+        if not api_key:
+            error_msg = (
+                "Ali Token Plan API key not configured. "
+                "Set ALI_TOKEN_PLAN_API_KEY in .env or via the Settings UI."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        service = AliTokenPlanVideoService(
+            api_key=api_key,
+            base_url=config_override.get("base_url"),
+            endpoint=config_override.get("endpoint"),
+            model=config_override.get("model"),
+            default_size=config_override.get("default_size"),
+            default_duration=config_override.get("default_duration"),
+        )
+
+        logger.info(
+            f"AliTokenPlanVideoService created successfully: "
+            f"model={service.model}, base_url={service.base_url}"
+        )
         return service
 
     @staticmethod

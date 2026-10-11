@@ -138,9 +138,14 @@ class LLMJudgeService:
 
         return prompt
 
+    def _is_ark_responses_api(self) -> bool:
+        """判断评审 LLM 是否为火山方舟 Responses API（否则走 OpenAI chat/completions）"""
+        url = (self.api_url or "").lower()
+        return "volces.com" in url or "/responses" in url
+
     async def _call_llm_api(self, image_base64: str, prompt: str) -> Dict[str, Any]:
         """
-        调用LLM API进行评分
+        调用LLM API进行评分（自动适配方舟 Responses 与 OpenAI chat/completions 两种格式）
 
         Args:
             image_base64: base64编码的拼接图片
@@ -149,6 +154,45 @@ class LLMJudgeService:
         Returns:
             API响应
         """
+        if self._is_ark_responses_api():
+            return await self._call_llm_api_ark(image_base64, prompt)
+        return await self._call_llm_api_openai(image_base64, prompt)
+
+    async def _call_llm_api_openai(self, image_base64: str, prompt: str) -> Dict[str, Any]:
+        """OpenAI 兼容多模态 chat/completions（阿里云 Token Plan / DashScope 等）"""
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        payload = {
+            "model": self.model,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/png;base64,{image_base64}"
+                            }
+                        },
+                        {"type": "text", "text": prompt}
+                    ]
+                }
+            ],
+            "temperature": self.temperature
+        }
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                f"{self.api_url}/chat/completions",
+                headers=headers,
+                json=payload
+            )
+            response.raise_for_status()
+            return response.json()
+
+    async def _call_llm_api_ark(self, image_base64: str, prompt: str) -> Dict[str, Any]:
+        """火山引擎方舟 Responses API（原实现）"""
         headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
@@ -196,6 +240,21 @@ class LLMJudgeService:
         """
         try:
             # 提取响应内容
+            # OpenAI 兼容格式: response['choices'][0]['message']['content']
+            if 'choices' in response and isinstance(response['choices'], list) \
+                    and response['choices']:
+                message = response['choices'][0].get('message', {})
+                text_content = message.get('content', '')
+                if isinstance(text_content, list):
+                    # 部分网关把 content 拆成 [{type:text,text:...}] 列表
+                    text_content = ''.join(
+                        item.get('text', '') for item in text_content
+                        if isinstance(item, dict)
+                    )
+                if not text_content:
+                    raise ValueError('No text content in chat/completions response')
+                return self._extract_json_from_text(text_content, response)
+
             # 火山引擎方舟API的响应格式: response['output'] 是一个列表
             if 'output' in response and isinstance(response['output'], list):
                 output_list = response['output']
@@ -216,26 +275,7 @@ class LLMJudgeService:
                 if not text_content:
                     raise ValueError("No text content in response")
 
-                # 提取JSON部分
-                import json
-                import re
-
-                # 尝试提取JSON代码块
-                json_match = re.search(r'```json\s*(\{.*?\})\s*```', text_content, re.DOTALL)
-                if json_match:
-                    json_str = json_match.group(1)
-                else:
-                    # 尝试直接解析整个文本
-                    json_str = text_content
-
-                # 解析JSON
-                result = json.loads(json_str)
-
-                # 验证必需字段
-                if 'score' not in result:
-                    raise ValueError("Missing 'score' field in response")
-
-                return result
+                return self._extract_json_from_text(text_content, response)
 
             else:
                 raise ValueError("Invalid response format")
@@ -251,6 +291,44 @@ class LLMJudgeService:
                 'consistency_aspects': {},
                 'parse_error': str(e)
             }
+
+    def _extract_json_from_text(
+        self,
+        text_content: str,
+        response: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """从模型输出文本中提取评分 JSON（支持 ```json 代码块或裸 JSON）
+
+        Args:
+            text_content: 模型输出的文本内容
+            response: 原始API响应（仅用于错误日志）
+
+        Returns:
+            含 'score' 字段的评分字典
+
+        Raises:
+            ValueError: JSON 缺失或不含 score 字段
+        """
+        import json
+        import re
+
+        # 尝试提取JSON代码块
+        json_match = re.search(r'```json\s*(\{.*?\})\s*```', text_content, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(1)
+        else:
+            # 退化：抓取第一个 { 到最后一个 } 的子串（兼容前后缀说明文字）
+            start = text_content.find('{')
+            end = text_content.rfind('}')
+            if start != -1 and end > start:
+                json_str = text_content[start:end + 1]
+            else:
+                json_str = text_content
+
+        result = json.loads(json_str)
+        if 'score' not in result:
+            raise ValueError("Missing 'score' field in response")
+        return result
 
     async def batch_judge(
         self,

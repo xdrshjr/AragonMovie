@@ -177,15 +177,30 @@ Its JSON structure (fields under "settings"):
   text.enable_prompt_optimization (bool), text.enable_character_consistency_judge (bool)
 - voice {{enabled(bool), api_key, base_url, model, default_voice, default_format
   (mp3/opus/aac/flac/wav/pcm), default_speed(0.25-4.0)}} - OpenAI-compatible TTS (/audio/speech)
-- video.service_type ("veo3"|"sora2")
+- video.service_type ("veo3"|"sora2"|"ali_token_plan")
   video.veo3 {{api_key, base_url, endpoint, model, skip_upload}}
   video.sora2 {{api_key, base_url, endpoint, model, default_size, default_duration,
   default_style, watermark, private}}
-- image.service_type ("doubao"|"nano_banana"|"midjourney")
+  video.ali_token_plan {{api_key, base_url,
+  endpoint(/api/v1/services/aigc/video-generation/video-synthesis),
+  model(happyhorse-1.1-i2v), t2v_model(happyhorse-1.1-t2v),
+  r2v_model(happyhorse-1.1-r2v), default_size, default_duration}} -
+  Ali Token Plan (Ali Coding Plan) DashScope-native async gateway
+- image.service_type ("doubao"|"nano_banana"|"midjourney"|"ali_token_plan")
   image.doubao {{api_key, base_url, endpoint, model, watermark}}
   image.nano_banana {{api_key, base_url, endpoint, model}}
   image.midjourney {{api_key, base_url, bot_type(MID_JOURNEY|NIJI_JOURNEY), poll_interval,
   max_poll_attempts, auto_upscale, upscale_index}}
+  image.ali_token_plan {{api_key, base_url,
+  endpoint(/api/v1/services/aigc/multimodal-generation/generation),
+  model(wan2.7-image-pro)}}
+- Ali Token Plan uses ONE shared key for text/voice/image/video; setting either
+  video.ali_token_plan.api_key or image.ali_token_plan.api_key mirrors it to both.
+  Default gateway: https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1
+  (image/video clients strip the /compatible-mode/v1 suffix automatically for the
+  DashScope-native endpoints; text LLM uses the URL as-is).
+  Default models: text qwen3.8-max, TTS qwen-audio-3.0-tts-plus, image wan2.7-image-pro,
+  video happyhorse-1.1-i2v/t2v/r2v.
 - agent {{enabled(bool), provider("openai"|"anthropic"|"google"), api_key, base_url, model,
   max_turns, timeout_seconds, aragon_cli_path}} - the LLM powering YOU
 
