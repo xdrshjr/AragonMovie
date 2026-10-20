@@ -110,6 +110,15 @@ class BackendSettings(BaseSettings):
     redis_url: str = "redis://localhost:6379"
     task_retention_hours: int = 24
     max_concurrent_tasks: int = 10
+    # Cancel a running task once nobody has polled it for this long (seconds).
+    # The frontend polls every 2s while the workflow page is open; if the user
+    # closes the page or the browser dies, the task would otherwise keep
+    # generating (and burning quota) to completion. 0 disables the watchdog.
+    task_idle_timeout_seconds: int = 900
+    # How often the idle sweep runs (seconds)
+    task_idle_sweep_interval_seconds: int = 30
+    # Delete backend/temp_projects/workflow_* directories older than this
+    temp_project_retention_hours: int = 12
     
     # ==================== Concurrency ====================
     image_max_concurrent: int = 3
@@ -137,8 +146,9 @@ class BackendSettings(BaseSettings):
     # 只有 realtime 模型可用且需走 WebSocket）。provider=auto 时这类主机会自动
     # 改走下面的 DashScope 原生接口，而不是静默失败。
     tts_provider: Literal["auto", "openai_compatible", "dashscope_native"] = "auto"
-    # DashScope 原生语音合成（qwen-tts / cosyvoice-v2），需要 DashScope Key；
-    # 留空时回退到 tts_api_key
+    # DashScope 原生语音合成（qwen-tts / cosyvoice-v2）。
+    # 必须填 DashScope（百炼）Key：Token Plan 的 Key 在 dashscope.aliyuncs.com
+    # 上无效，复用它只会拿到 401。留空时不会静默降级，而是记录原因并跳过配音。
     tts_native_base_url: str = "https://dashscope.aliyuncs.com"
     tts_native_api_key: str = ""
     tts_native_model: str = "qwen-tts"

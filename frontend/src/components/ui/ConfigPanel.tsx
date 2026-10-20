@@ -142,6 +142,10 @@ interface SelectProps {
   options: Array<{ value: string; label: string; description?: string }>;
   disabled?: boolean;
   className?: string;
+  /** Lets a sibling <label htmlFor> point at this control */
+  id?: string;
+  name?: string;
+  'aria-label'?: string;
 }
 
 export const Select: React.FC<SelectProps> = ({
@@ -150,9 +154,15 @@ export const Select: React.FC<SelectProps> = ({
   options,
   disabled = false,
   className = '',
+  id,
+  name,
+  'aria-label': ariaLabel,
 }) => {
   return (
     <select
+      id={id}
+      name={name}
+      aria-label={ariaLabel}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}

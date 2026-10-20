@@ -690,33 +690,52 @@ async def get_workflow_asset(task_id: str, asset_type: str, filename: str):
         )
 
 
-@router.get(
+@router.api_route(
     "/cleanup",
+    methods=["GET", "POST"],
     summary="Cleanup Old Workflow Assets",
     include_in_schema=False  # Admin endpoint, hide from public docs
 )
-async def cleanup_old_assets(max_age_hours: int = 24):
+async def cleanup_old_assets(max_age_hours: int = 24, include_temp_projects: bool = False):
     """
     Clean up old workflow assets (admin endpoint).
     
     **Query Parameters:**
     - `max_age_hours`: Maximum age in hours before cleanup (default: 24)
+    - `include_temp_projects`: also delete `backend/temp_projects/workflow_*`
+      directories (pass 0 to remove them all)
     
     **Returns:**
     - Number of directories cleaned up
     """
-    logger.info(f"WorkflowAPI | Cleanup requested | max_age_hours={max_age_hours}")
+    logger.info(
+        f"WorkflowAPI | Cleanup requested | max_age_hours={max_age_hours} | "
+        f"include_temp_projects={include_temp_projects}"
+    )
     
     try:
         asset_manager = get_asset_manager()
         cleaned_count = asset_manager.cleanup_old_assets(max_age_hours=max_age_hours)
+
+        temp_removed = 0
+        if include_temp_projects:
+            from backend.core.temp_project_manager import get_temp_project_manager
+            from utils.blocking import run_blocking
+
+            temp_removed = await run_blocking(
+                get_temp_project_manager().cleanup_old_projects, max_age_hours
+            )
         
         logger.info(f"WorkflowAPI | Cleanup completed | cleaned={cleaned_count}")
         
         return {
             "success": True,
             "cleaned_count": cleaned_count,
-            "message": f"Cleaned up {cleaned_count} old workflow asset directories"
+            "temp_projects_removed": temp_removed,
+            "message": (
+                f"Cleaned up {cleaned_count} old workflow asset directories and "
+                f"{temp_removed} temporary project directories"
+            )
         }
         
     except Exception as e:

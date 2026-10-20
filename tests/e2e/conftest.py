@@ -69,6 +69,56 @@ def browser_context_args(browser_context_args: dict) -> dict:
     }
 
 
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_generated_artifacts(backend_url: str):
+    """Cancel leftover tasks and delete temp dirs / projects created by the run.
+
+    Every E2E run used to leave one project record in ``backend/projects/`` and a
+    whole ``backend/temp_projects/workflow_*`` directory (images + videos) on
+    disk, and any task the run abandoned kept generating in the background.
+
+    Best effort on purpose: it depends only on the configured URL (not on a
+    healthy backend), so it can never block or fail the suite.
+    """
+    yield
+
+    from tests.e2e.e2e_support import BackendApi
+
+    api = BackendApi(backend_url, timeout_s=60.0)
+
+    # Skip everything when the backend was never reachable during the run.
+    try:
+        api.session.get(f"{api.base_url}/health", timeout=5).raise_for_status()
+    except Exception as exc:  # noqa: BLE001
+        print(f"[cleanup] backend unreachable, skipping cleanup: {exc}")
+        return
+
+    # 1) stop generation that is still running but no longer watched
+    try:
+        result = api.sweep_abandoned_tasks()
+        print(f"[cleanup] abandoned tasks cancelled: {result.get('cancelled_count')}")
+    except Exception as exc:  # noqa: BLE001 - teardown must not fail the suite
+        print(f"[cleanup] abandoned-task sweep failed: {exc}")
+
+    # 2) remove the project records this run created
+    project_name = os.getenv("E2E_PROJECT_NAME", "E2E 城市微光")
+    try:
+        deleted = api.delete_projects_named(project_name)
+        print(f"[cleanup] deleted {deleted} project(s) named {project_name!r}")
+    except Exception as exc:  # noqa: BLE001
+        print(f"[cleanup] project cleanup failed: {exc}")
+
+    # 3) remove temp project directories (max_age_hours=0 -> all of them)
+    try:
+        result = api.cleanup_temp_projects(max_age_hours=0)
+        print(
+            "[cleanup] temp projects removed: "
+            f"{result.get('temp_projects_removed')}"
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"[cleanup] temp project cleanup failed: {exc}")
+
+
 CHROME_PATHS = (
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",

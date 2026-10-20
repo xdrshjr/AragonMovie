@@ -35,6 +35,60 @@ class TempProjectManager:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         logger.info(f"TempProjectManager initialized | base_dir={self.base_dir}")
     
+    def cleanup_old_projects(self, max_age_hours: int = 12) -> int:
+        """Delete temporary project directories older than ``max_age_hours``.
+
+        Each workflow run creates ``backend/temp_projects/workflow_*`` containing
+        generated images and videos. Nothing used to remove them, so every run
+        (including abandoned E2E runs) left the directory behind forever.
+
+        Args:
+            max_age_hours: Maximum age in hours before a directory is removed.
+
+        Returns:
+            Number of removed directories.
+        """
+        import shutil
+        from datetime import timedelta
+
+        cutoff = datetime.now() - timedelta(hours=max_age_hours)
+        removed = 0
+
+        try:
+            for path in self.base_dir.iterdir():
+                if not path.is_dir() or not path.name.startswith("workflow_"):
+                    continue
+                try:
+                    modified = datetime.fromtimestamp(path.stat().st_mtime)
+                except OSError:
+                    continue
+                if modified >= cutoff:
+                    continue
+                try:
+                    shutil.rmtree(path)
+                    removed += 1
+                    logger.debug(
+                        f"TempProjectManager | Removed temp project | "
+                        f"path={path} | age={(datetime.now() - modified).total_seconds() / 3600:.1f}h"
+                    )
+                except Exception as e:  # noqa: BLE001
+                    logger.warning(
+                        f"TempProjectManager | Failed to remove temp project | "
+                        f"path={path} | error={e}"
+                    )
+        except FileNotFoundError:
+            return removed
+        except Exception as e:  # noqa: BLE001
+            logger.error(f"TempProjectManager | Cleanup failed | error={e}")
+            return removed
+
+        if removed:
+            logger.info(
+                f"TempProjectManager | Cleanup completed | removed={removed} "
+                f"directories older than {max_age_hours}h"
+            )
+        return removed
+
     async def create_temp_project(
         self,
         task_id: str,

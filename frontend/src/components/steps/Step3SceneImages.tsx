@@ -385,10 +385,13 @@ export const Step3SceneImages: React.FC<Step3SceneImagesProps> = ({
                     )}
                   </div>
                   <ImageGrid
-                    images={scene.generatedImages.map((url) => ({
+                    label={`${scene.id} 的场景图候选`}
+                    testIdPrefix={`scene-${scene.id}-option`}
+                    images={scene.generatedImages.map((url, i) => ({
                       id: url,
                       url,
                       selected: url === scene.selectedImage,
+                      label: `${scene.id} 候选图 ${i + 1}`,
                     }))}
                     onSelect={(imageUrl) => handleImageSelect(scene.id, imageUrl)}
                     columns={3}

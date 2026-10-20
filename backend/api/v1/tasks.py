@@ -147,6 +147,39 @@ async def cancel_task(task_id: str):
         )
 
 
+@router.post(
+    "/maintenance/sweep",
+    summary="Cancel Abandoned Tasks",
+    include_in_schema=False,
+)
+async def sweep_abandoned_tasks():
+    """Cancel running tasks whose client stopped polling.
+
+    The frontend polls ``GET /api/v1/tasks/{id}`` every couple of seconds while
+    the workflow page is open. If the tab is closed or the browser dies, the
+    backend task used to keep generating to completion (and keep spending
+    quota). The idle watchdog does this automatically; this endpoint triggers a
+    sweep on demand (ops / E2E teardown).
+    """
+    logger.info("Abandoned-task sweep requested")
+
+    try:
+        task_manager = get_task_manager()
+        cancelled = await task_manager.sweep_abandoned_tasks()
+        logger.info(f"Abandoned-task sweep finished | cancelled={cancelled}")
+        return {
+            "success": True,
+            "cancelled_count": len(cancelled),
+            "cancelled_tasks": cancelled,
+        }
+    except Exception as e:  # noqa: BLE001
+        logger.exception(f"Abandoned-task sweep failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Abandoned-task sweep failed: {str(e)}",
+        )
+
+
 @router.get("/", response_model=List[TaskInfo], summary="List All Tasks")
 async def list_tasks():
     """

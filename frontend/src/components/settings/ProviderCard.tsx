@@ -77,13 +77,23 @@ export default function ProviderCard({
 
       <div className="space-y-4">
         {fields.map((field) => {
+          // BUG 10 in the settings UI: label and control were only visually
+          // adjacent, so clicking the label did not focus the input and
+          // get_by_label() could not locate it.
+          const fieldId = `provider-${title}-${field.key}`
+            .replace(/[^a-zA-Z0-9_-]+/g, '-')
+            .toLowerCase();
+
           if (field.secret) {
             const stored = (maskedKey ?? '') !== '';
             return (
               <div key={field.key}>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="text-sm font-medium text-text-primary">
-                    API Key
+                  <label
+                    htmlFor={fieldId}
+                    className="text-sm font-medium text-text-primary"
+                  >
+                    {field.label || 'API Key'}
                     {stored && (
                       <span className="ml-2 text-xs text-text-tertiary">
                         已保存 {maskedKey}
@@ -102,6 +112,7 @@ export default function ProviderCard({
                 </div>
                 <div className="flex gap-2">
                   <input
+                    id={fieldId}
                     type={showSecret ? 'text' : 'password'}
                     className="input-apple flex-1"
                     value={(values[field.key] as string) ?? ''}
@@ -127,10 +138,14 @@ export default function ProviderCard({
           if (field.type === 'select' && field.options) {
             return (
               <div key={field.key}>
-                <label className="block text-sm font-medium text-text-primary mb-1">
+                <label
+                  htmlFor={fieldId}
+                  className="block text-sm font-medium text-text-primary mb-1"
+                >
                   {field.label}
                 </label>
                 <Select
+                  id={fieldId}
                   options={field.options}
                   value={String(values[field.key] ?? '')}
                   onChange={(v: string) => onChange(field.key, v)}

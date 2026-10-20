@@ -142,7 +142,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
           <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)]">
             <div className="flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
               <span className="px-2 py-1 rounded bg-[var(--color-surface-elevated)]">
-                {project.video_type.replace('_', ' ')}
+                {project.video_type.replaceAll('_', ' ')}
               </span>
               <span className="px-2 py-1 rounded bg-[var(--color-surface-elevated)]">
                 {project.mode}

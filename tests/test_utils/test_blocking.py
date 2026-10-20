@@ -99,7 +99,14 @@ async def test_composer_uses_the_media_executor():
 
     seen = {}
 
-    def fake_compose(video_results, output_filename, bgm_path, add_subtitles, report=None):
+    def fake_compose(
+        video_results,
+        output_filename,
+        bgm_path,
+        add_subtitles,
+        report=None,
+        narration_audio=None,
+    ):
         seen["thread"] = threading.current_thread().name
         return "out.mp4"
 

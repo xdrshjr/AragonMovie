@@ -155,7 +155,7 @@ export default function ProjectDetailPage() {
               )}
               <div className="flex items-center gap-4 mt-4 text-sm text-text-tertiary">
                 <span className="px-3 py-1 rounded bg-surface-elevated">
-                  {project.video_type.replace('_', ' ')}
+                  {project.video_type.replaceAll('_', ' ')}
                 </span>
                 <span className="px-3 py-1 rounded bg-surface-elevated">
                   {project.mode} mode

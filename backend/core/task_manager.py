@@ -28,20 +28,31 @@ class TaskStore:
         self._cleanup_task: Optional[asyncio.Task] = None
         
     async def start_cleanup(self):
-        """Start background cleanup task"""
+        """Start background cleanup task (idempotent, restart-safe)."""
+        # A task left over from a previous event loop (e.g. two TestClient
+        # lifespans in one process) must be replaced, not reused.
+        if self._cleanup_task is not None and (
+            self._cleanup_task.done() or self._cleanup_task.get_loop() is not asyncio.get_running_loop()
+        ):
+            self._cleanup_task = None
+
         if self._cleanup_task is None:
             self._cleanup_task = asyncio.create_task(self._cleanup_loop())
             logger.info("Task cleanup service started")
     
     async def stop_cleanup(self):
         """Stop background cleanup task"""
-        if self._cleanup_task:
-            self._cleanup_task.cancel()
-            try:
-                await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
-            logger.info("Task cleanup service stopped")
+        task, self._cleanup_task = self._cleanup_task, None
+        if task is None:
+            return
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        except Exception as e:  # noqa: BLE001 - loop may already be closing
+            logger.debug(f"Cleanup task ended with {e.__class__.__name__}: {e}")
+        logger.info("Task cleanup service stopped")
     
     async def _cleanup_loop(self):
         """Background loop to clean up expired tasks"""
@@ -104,6 +115,14 @@ class TaskManager:
         self._running_tasks: Dict[str, asyncio.Task] = {}
         self._semaphore = asyncio.Semaphore(settings.max_concurrent_tasks)
         self._status_callbacks: List[Callable] = []  # Callbacks for status updates
+        # BUG 14: monotonic timestamps of the last status poll per task. A task
+        # that was being watched and then stopped being polled (closed tab,
+        # crashed browser) is cancelled by the idle sweep so it stops burning
+        # quota. Tasks that were never polled are never touched.
+        self._last_poll: Dict[str, float] = {}
+        # Why a task was cancelled ("user" / "abandoned"), surfaced in status
+        self._cancel_reasons: Dict[str, str] = {}
+        self._idle_sweeper: Optional[asyncio.Task] = None
         logger.info(f"TaskManager initialized (max concurrent: {settings.max_concurrent_tasks})")
 
     def register_status_callback(self, callback: Callable):
@@ -128,9 +147,96 @@ class TaskManager:
     async def start(self):
         """Start the task manager"""
         await self.store.start_cleanup()
+        self._start_idle_sweeper()
     
+    def _start_idle_sweeper(self) -> None:
+        """Start the abandoned-task watchdog (no-op when disabled)."""
+        if self._idle_sweeper is not None:
+            return
+        if getattr(settings, "task_idle_timeout_seconds", 0) <= 0:
+            logger.info("Abandoned-task watchdog disabled (task_idle_timeout_seconds=0)")
+            return
+        self._idle_sweeper = asyncio.create_task(self._idle_sweep_loop())
+        logger.info(
+            "Abandoned-task watchdog started | "
+            f"idle_timeout={settings.task_idle_timeout_seconds}s | "
+            f"interval={settings.task_idle_sweep_interval_seconds}s"
+        )
+
+    async def stop_idle_sweeper(self) -> None:
+        """Stop the abandoned-task watchdog."""
+        if self._idle_sweeper is not None:
+            self._idle_sweeper.cancel()
+            try:
+                await self._idle_sweeper
+            except asyncio.CancelledError:
+                pass
+            self._idle_sweeper = None
+            logger.info("Abandoned-task watchdog stopped")
+
+    async def _idle_sweep_loop(self) -> None:
+        interval = max(1, int(settings.task_idle_sweep_interval_seconds))
+        while True:
+            try:
+                await asyncio.sleep(interval)
+                await self.cancel_abandoned_tasks()
+            except asyncio.CancelledError:
+                break
+            except Exception as e:  # noqa: BLE001 - never kill the loop
+                logger.error(f"Error in abandoned-task sweep: {e}")
+
+    def note_poll(self, task_id: str) -> None:
+        """Record that a client is (still) watching this task."""
+        self._last_poll[task_id] = time.monotonic()
+
+    async def cancel_abandoned_tasks(self) -> List[str]:
+        """Cancel running tasks nobody has polled for the idle timeout.
+
+        Returns:
+            The task ids that were cancelled.
+        """
+        timeout = getattr(settings, "task_idle_timeout_seconds", 0)
+        if timeout <= 0:
+            return []
+
+        now = time.monotonic()
+        # Only tasks that are actually running here can be cancelled
+        candidates = [
+            task_id for task_id in list(self._running_tasks)
+            if task_id in self._last_poll
+        ]
+
+        cancelled: List[str] = []
+        for task_id in candidates:
+            idle_for = now - self._last_poll[task_id]
+            if idle_for < timeout:
+                continue
+
+            logger.warning(
+                f"Task abandoned by client, cancelling | task_id={task_id} | "
+                f"idle_for={idle_for:.0f}s > {timeout}s"
+            )
+            reason = (
+                "Task cancelled automatically: no status poll for "
+                f"{int(idle_for)}s (client disconnected or closed the page)"
+            )
+            await self.cancel_task(task_id, reason=reason)
+            # NOTE: the reason stays in _cancel_reasons so the task's own
+            # CancelledError handler writes the same, meaningful message
+            # instead of overwriting this one with a generic string.
+            await self._update_task_status(
+                task_id,
+                TaskStatus.CANCELLED,
+                message=reason,
+            )
+            self._last_poll.pop(task_id, None)
+            cancelled.append(task_id)
+
+        return cancelled
+
     async def stop(self):
         """Stop the task manager and cancel all running tasks"""
+        await self.stop_idle_sweeper()
         # Cancel all running tasks
         for task_id, task in self._running_tasks.items():
             task.cancel()
@@ -226,11 +332,12 @@ class TaskManager:
                 logger.info(f"Task completed: {task_id} (duration: {duration:.2f}s)")
                 
         except asyncio.CancelledError:
-            logger.warning(f"Task cancelled: {task_id}")
+            reason = self._cancel_reasons.pop(task_id, None)
+            logger.warning(f"Task cancelled: {task_id} | reason={reason or 'user'}")
             await self._update_task_status(
                 task_id,
                 TaskStatus.CANCELLED,
-                message="Task was cancelled"
+                message=reason or "Task was cancelled"
             )
             
         except Exception as e:
@@ -266,9 +373,12 @@ class TaskManager:
             )
         
         finally:
-            # Remove from running tasks
+            # Remove from running tasks and drop watchdog bookkeeping, otherwise
+            # completed tasks would keep entries in _last_poll / _cancel_reasons.
             if task_id in self._running_tasks:
                 del self._running_tasks[task_id]
+            self._last_poll.pop(task_id, None)
+            self._cancel_reasons.pop(task_id, None)
     
     async def _update_task_status(
         self,
@@ -366,6 +476,11 @@ class TaskManager:
             TaskNotFoundException: If task doesn't exist
             TaskCancelledException: If task was cancelled
         """
+        # BUG 14: mark the task as still being watched, so the abandoned-task
+        # watchdog only cancels tasks whose client stopped polling.
+        if task_id in self._running_tasks:
+            self.note_poll(task_id)
+
         task_data = await self.store.get(task_id)
         if not task_data:
             raise TaskNotFoundException(task_id)
@@ -384,33 +499,49 @@ class TaskManager:
             error=task_data.get("error")
         )
     
-    async def cancel_task(self, task_id: str) -> bool:
+    async def cancel_task(self, task_id: str, reason: str = "") -> bool:
         """Cancel a running task
         
         Args:
             task_id: Task identifier
-            
+            reason: Optional message stored on the cancelled task
+
         Returns:
             True if task was cancelled, False if not running
         """
+        if reason:
+            self._cancel_reasons[task_id] = reason
+        message = self._cancel_reasons.get(task_id) or "Task cancelled by user"
+
         if task_id in self._running_tasks:
             task = self._running_tasks[task_id]
             task.cancel()
             logger.info(f"Task cancellation requested: {task_id}")
+            # The reason stays in _cancel_reasons so the task's own
+            # CancelledError handler can write it; that handler (and the
+            # _execute_task finally block) both pop the entry, so it cannot leak
+            # even if the task finishes without observing the cancellation.
             return True
         
         # If task exists but not running, mark as cancelled
         task_data = await self.store.get(task_id)
         if task_data and task_data["status"] in [TaskStatus.PENDING, TaskStatus.PROCESSING]:
+            self._cancel_reasons.pop(task_id, None)
             await self._update_task_status(
                 task_id,
                 TaskStatus.CANCELLED,
-                message="Task cancelled by user"
+                message=message
             )
             return True
         
+        # Nothing was cancelled: make sure the reason does not linger
+        self._cancel_reasons.pop(task_id, None)
         return False
     
+    async def sweep_abandoned_tasks(self) -> List[str]:
+        """Public hook: run one abandoned-task sweep now."""
+        return await self.cancel_abandoned_tasks()
+
     async def list_all_tasks(self) -> List[TaskInfo]:
         """List all tasks
         

@@ -370,6 +370,11 @@ Expected script format (see `examples/sample_scripts/programmer_day.txt`):
   `video.ali_token_plan.watermark`). Without that key the gateway hands back the
   `..._refiner_watermark.mp4` variant, so the default is `false`
 - All services implement retry logic for transient failures
+- **`seed` / `cfg_scale` / `steps` are accepted but NOT forwarded** by
+  `DoubaoService.generate_image()`: the Ark image API rejects them, so the
+  service drops them on purpose (debug log only).
+  `tests/test_services/test_doubao_service.py::test_generate_with_seed_and_cfg`
+  asserts that contract - do not "fix" it by putting them back in the payload
 
 ### Testing Strategy
 - Use `pytest.fixture` for reusable test data (e.g., `sample_scenes`)
@@ -414,7 +419,13 @@ When creating new agents:
 - Clean up temp files in output/temp directories
 
 ### Configuration
-- Never commit API keys - use `.env` file
+- Never commit API keys - use `.env` file. `.env.example` must contain only
+  obvious placeholders (`your_xxx_here`); credential-shaped defaults (e.g.
+  `sk-XXXX...asdasd`) are rejected by
+  `tests/test_backend/test_env_example_hygiene.py`
+- Prefer `String.prototype.replaceAll` (or a `/g` regex) when turning
+  `video_type` slugs into labels - `replace('_', ' ')` only replaces the first
+  underscore
 - Access config via `config.settings` singleton
 - Override config per-agent via constructor `config` parameter
 - Use `Optional[str]` for optional API keys (e.g., openai_api_key)
@@ -533,7 +544,22 @@ wrappers are reset (`backend/core/service_wrapper.py::reset_runtime_services`).
   `GET /api/v1/tasks/{id}` poll queues up behind it, and the frontend eventually
   reports a timeout/`Generation failed` even though the mp4 was written fine.
   Covered by `VideoComposerAgent._compose_sync` (worker thread) and
-  `test_execute_runs_composition_off_event_loop`. The same rule applies to the
+  `test_execute_runs_composition_off_event_loop`.
+- **Abandoned tasks are cancelled.** The frontend polls
+  `GET /api/v1/tasks/{id}` every couple of seconds; if the tab is closed or the
+  browser dies the task used to keep generating (and spending quota) to
+  completion. `TaskManager.note_poll()` records each status read and the idle
+  watchdog (`TASK_IDLE_TIMEOUT_SECONDS`, default 900s; sweep every
+  `TASK_IDLE_SWEEP_INTERVAL_SECONDS`, default 30s) cancels tasks whose client
+  stopped polling. Tasks that were never polled are left alone, so API-only
+  callers are unaffected. Manual hooks:
+  `POST /api/v1/tasks/maintenance/sweep` and
+  `GET|POST /api/v1/workflow/cleanup?max_age_hours=0&include_temp_projects=true`.
+- **Temp project GC.** Each run creates `backend/temp_projects/workflow_*`
+  (images + videos); `TempProjectManager.cleanup_old_projects()` removes them
+  after `TEMP_PROJECT_RETENTION_HOURS` (default 12) and runs at startup. The E2E
+  suite tears down after itself (cancels tasks, deletes the project it created,
+  removes temp dirs) via `tests/e2e/conftest.py::cleanup_generated_artifacts`. The same rule applies to the
   ffmpeg helpers (`FFmpegProcessor.extract_frame` / `concatenate_videos_filter`)
   and to `backend.core.project_manager` (JSON persistence + ffmpeg thumbnails,
   invoked from the task status callback).
@@ -564,6 +590,14 @@ wrappers are reset (`backend/core/service_wrapper.py::reset_runtime_services`).
 - Server components for static content, client components for interactivity
 
 **Accessibility / automation**:
+- `components/ui/ImageGrid.tsx` renders each selectable image as a real
+  `<button role="option" aria-selected data-testid>` inside a
+  `role="listbox"` group (accessible name from `label`, never from the
+  data-URL held in `id`). Pass `label` / `testIdPrefix` at call sites
+  (`character-<name>-option`, `scene-<id>-option`); the old markup was a bare
+  `<div onClick>` whose selection lived only in the `ring-4 ring-apple-blue`
+  class, so keyboard users could not pick an image and tests had to guess
+  classes
 - `components/ui/Input.tsx` and `Textarea.tsx` wire `htmlFor`/`id` plus
   `aria-describedby` (+ `aria-invalid`, `role="alert"` on errors), so clicking
   a label focuses the control and Playwright's `get_by_label()` works. Prefer

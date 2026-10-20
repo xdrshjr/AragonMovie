@@ -78,6 +78,62 @@ class BackendApi:
             )
         return response.json()
 
+    # ---------------------------------------------------------------- tasks
+    def cancel_task(self, task_id: str) -> bool:
+        """Cancel a running task. Returns True when the backend accepted it."""
+        response = self.session.delete(
+            f"{self.base_url}/api/v1/tasks/{task_id}", timeout=30
+        )
+        return response.status_code < 400
+
+    def sweep_abandoned_tasks(self) -> Dict[str, Any]:
+        """Ask the backend to cancel tasks nobody polls any more."""
+        response = self.session.post(
+            f"{self.base_url}/api/v1/tasks/maintenance/sweep", timeout=60
+        )
+        if response.status_code >= 400:
+            raise BackendError(
+                f"task sweep failed ({response.status_code}): {response.text[:300]}"
+            )
+        return response.json()
+
+    def cleanup_temp_projects(self, max_age_hours: int = 0) -> Dict[str, Any]:
+        """Delete ``backend/temp_projects/workflow_*`` (0 = all of them)."""
+        response = self.session.post(
+            f"{self.base_url}/api/v1/workflow/cleanup",
+            params={"max_age_hours": max_age_hours, "include_temp_projects": "true"},
+            timeout=120,
+        )
+        if response.status_code >= 400:
+            raise BackendError(
+                f"temp project cleanup failed ({response.status_code}): "
+                f"{response.text[:300]}"
+            )
+        return response.json()
+
+    # ---------------------------------------------------------------- projects
+    def list_projects(self) -> List[Dict[str, Any]]:
+        response = self.session.get(f"{self.base_url}/api/v1/projects", timeout=60)
+        if response.status_code >= 400:
+            raise BackendError(
+                f"project list failed ({response.status_code}): {response.text[:300]}"
+            )
+        data = response.json()
+        return data.get("projects", data if isinstance(data, list) else [])
+
+    def delete_projects_named(self, name: str) -> int:
+        """Delete every project whose ``name`` matches (E2E leaves records behind)."""
+        deleted = 0
+        for project in self.list_projects():
+            if project.get("name") != name:
+                continue
+            response = self.session.delete(
+                f"{self.base_url}/api/v1/projects/{project.get('id')}", timeout=60
+            )
+            if response.status_code < 400:
+                deleted += 1
+        return deleted
+
     # ---------------------------------------------------------------- assets
     def download(self, url: str, target: Path) -> Path:
         """Download an asset (image / video) to ``target``."""

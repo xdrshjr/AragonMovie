@@ -159,12 +159,18 @@ class TestDoubaoService:
                 steps=50
             )
 
-            # 验证参数正确传递
+            # seed / cfg_scale / steps 是「被接受但不下发」的参数：豆包(Ark)
+            # 图像接口不支持它们，服务层显式忽略并只记 debug 日志（见
+            # services/doubao_service.py）。这里锁定该契约，避免再次误判。
             call_args = mock_post.call_args
             payload = call_args.kwargs['json']
-            assert payload['seed'] == 12345
-            assert payload['cfg_scale'] == 8.0
-            assert payload['steps'] == 50
+            assert 'seed' not in payload
+            assert 'cfg_scale' not in payload
+            assert 'steps' not in payload
+            # 真正会下发的字段仍然存在
+            assert payload['model'] == service.model
+            assert payload['prompt'] == "test prompt"
+            assert result is not None
 
 
 class TestDoubaoImageToImage:

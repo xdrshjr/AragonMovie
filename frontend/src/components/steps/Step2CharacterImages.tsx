@@ -537,10 +537,13 @@ export const Step2CharacterImages: React.FC<Step2CharacterImagesProps> = ({
                     )}
                   </div>
                   <ImageGrid
-                    images={character.generatedImages.map((url) => ({
+                    label={`${character.name} 的角色参考图候选`}
+                    testIdPrefix={`character-${character.name}-option`}
+                    images={character.generatedImages.map((url, i) => ({
                       id: url,
                       url,
                       selected: url === character.selectedImage,
+                      label: `${character.name} 候选图 ${i + 1}`,
                     }))}
                     onSelect={(imageUrl) => handleImageSelect(character.name, imageUrl)}
                     columns={3}

@@ -153,8 +153,9 @@ class Settings(BaseSettings):
     # 只有 realtime 模型可用且需走 WebSocket）。provider=auto 时这类主机会自动
     # 改走下面的 DashScope 原生接口，而不是静默失败。
     tts_provider: Literal["auto", "openai_compatible", "dashscope_native"] = "auto"
-    # DashScope 原生语音合成（qwen-tts / cosyvoice-v2），需要 DashScope Key；
-    # 留空时回退到 tts_api_key
+    # DashScope 原生语音合成（qwen-tts / cosyvoice-v2）。
+    # 必须填 DashScope（百炼）Key：Token Plan 的 Key 在 dashscope.aliyuncs.com
+    # 上无效，复用它只会拿到 401。留空时不会静默降级，而是记录原因并跳过配音。
     tts_native_base_url: str = "https://dashscope.aliyuncs.com"
     tts_native_api_key: str = ""
     tts_native_model: str = "qwen-tts"

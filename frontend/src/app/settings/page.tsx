@@ -450,7 +450,7 @@ export default function SettingsPage() {
                     ],
                   },
                   { key: 'base_url', label: 'Base URL', placeholder: 'https://api.openai.com/v1' },
-                  { key: 'api_key', label: 'API Key', secret: true },
+                  { key: 'api_key', label: 'API Key（兼容网关）', secret: true },
                   { key: 'model', label: '模型', placeholder: 'tts-1 / tts-1-hd' },
                   { key: 'default_voice', label: '默认音色', placeholder: 'alloy' },
                   {
@@ -484,7 +484,7 @@ export default function SettingsPage() {
                 subtitle="TTS_PROVIDER=dashscope_native 时使用：POST {base}/api/v1/services/aigc/multimodal-generation/generation（模型 qwen-tts / cosyvoice-v2）。Token Plan 网关没有该通道，需要单独的 DashScope Key。"
                 fields={[
                   { key: 'native_base_url', label: 'Base URL', placeholder: 'https://dashscope.aliyuncs.com' },
-                  { key: 'native_api_key', label: 'API Key', secret: true },
+                  { key: 'native_api_key', label: 'DashScope API Key', secret: true },
                   { key: 'native_model', label: '模型', placeholder: 'qwen-tts / cosyvoice-v2' },
                   { key: 'native_voice', label: '音色', placeholder: 'Cherry / longxiaochun_v2' },
                 ]}

@@ -92,6 +92,17 @@ class TestConnectionTests:
         assert r.status_code == 404
 
     def test_text_reports_missing_key(self, client):
+        # The probe reads the effective (store-backed) settings, and a developer
+        # .env may well carry real keys - so clear them through the API first
+        # ("" clears a write-only key) to make the scenario deterministic.
+        clear = client.put("/api/v1/settings", json={
+            "text": {
+                "fast_llm": {"api_key": ""},
+                "judge_llm": {"api_key": ""},
+            }
+        })
+        assert clear.status_code == 200
+
         r = client.post("/api/v1/settings/test/text")
         assert r.status_code == 200
         results = r.json()

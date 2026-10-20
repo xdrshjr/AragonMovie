@@ -145,10 +145,33 @@ async def lifespan(app: FastAPI):
     task_manager.register_status_callback(project_status_callback)
     logger.info("Project status callback registered")
 
+    # BUG 14: start the task manager (abandoned-task watchdog) and clean up temp
+    # project directories left behind by earlier runs.
+    await task_manager.start()
+    try:
+        from backend.core.temp_project_manager import get_temp_project_manager
+        from utils.blocking import run_blocking
+
+        removed = await run_blocking(
+            get_temp_project_manager().cleanup_old_projects,
+            settings.temp_project_retention_hours,
+        )
+        if removed:
+            logger.info(f"Startup cleanup removed {removed} stale temp project(s)")
+    except Exception as e:  # noqa: BLE001 - cleanup must never block startup
+        logger.warning(f"Startup temp-project cleanup failed: {e}")
+
     yield
 
     # Shutdown
     logger.info("Shutting down API server...")
+
+    # Cancel running tasks, stop the abandoned-task watchdog and the TaskStore
+    # cleanup loop (a bare stop_idle_sweeper() left the hourly loop dangling).
+    try:
+        await task_manager.stop()
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"Failed to stop task manager cleanly: {e}")
 
     # Release the media worker pool used for blocking composition work
     from utils.blocking import shutdown_media_executor
