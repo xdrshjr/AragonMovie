@@ -90,15 +90,27 @@ async def lifespan(app: FastAPI):
     task_manager = get_task_manager()
 
     async def project_status_callback(task_id: str, status: TaskStatus, progress: int, result: any, error: any):
-        """Callback to sync project status with task status"""
+        """Callback to sync project status with task status
+
+        ProjectManager is synchronous (JSON persistence + ffmpeg thumbnail
+        generation, which shells out with a 30s timeout), so it must run in a
+        worker thread - otherwise the event loop stalls and task polling stalls
+        with it.
+        """
+        from utils.blocking import run_blocking
+
         try:
             # Find project by task_id
-            project = project_manager.get_project_by_task_id(task_id)
+            project = await run_blocking(
+                project_manager.get_project_by_task_id, task_id
+            )
             if not project:
                 return
 
             # Sync status and progress
-            project_manager.sync_task_status(project.id, status, progress)
+            await run_blocking(
+                project_manager.sync_task_status, project.id, status, progress
+            )
 
             # Update project with result data if completed
             if status == TaskStatus.COMPLETED and result:
@@ -107,7 +119,10 @@ async def lifespan(app: FastAPI):
                 scene_count = result.get("scene_count")
                 character_count = result.get("character_count")
 
-                project_manager.update_project_from_task_result(
+                # This is where the ffmpeg thumbnail is generated: keep it off
+                # the event loop.
+                await run_blocking(
+                    project_manager.update_project_from_task_result,
                     project.id,
                     video_path=video_path,
                     duration=duration,
@@ -118,7 +133,8 @@ async def lifespan(app: FastAPI):
             # Update project with error message if failed
             elif status == TaskStatus.FAILED and error:
                 error_message = error.get("message", str(error))
-                project_manager.update_project_from_task_result(
+                await run_blocking(
+                    project_manager.update_project_from_task_result,
                     project.id,
                     error_message=error_message
                 )
@@ -133,6 +149,11 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down API server...")
+
+    # Release the media worker pool used for blocking composition work
+    from utils.blocking import shutdown_media_executor
+    shutdown_media_executor(wait=False)
+
     logger.info("Cleanup completed")
 
 

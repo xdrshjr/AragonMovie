@@ -29,6 +29,7 @@ import type {
   AgentStatus,
 } from '@/lib/api';
 import { logger } from '@/lib/logger';
+import { invalidateActiveImageService } from '@/lib/imageService';
 
 type Category = 'text' | 'voice' | 'video' | 'image' | 'agent';
 type Draft = Record<string, unknown>;
@@ -209,6 +210,9 @@ export default function SettingsPage() {
         ...initDrafts(result.settings),
       }));
       setDirty((prev) => ({ ...prev, [category]: false }));
+      // The workflow steps resolve the active image service from these settings;
+      // drop the cached value so the change takes effect immediately.
+      invalidateActiveImageService();
       setNotice('已保存并即时生效（无需重启后端）');
       if (category === 'agent') {
         setAgentStatus(await apiClient.settings.agentStatus().catch(() => null));

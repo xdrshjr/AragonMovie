@@ -418,9 +418,40 @@ export const apiClient = {
     pollIntervalMs: number = 2000
   ): Promise<TaskStatusResponse> {
     const deadline = Date.now() + timeoutMs;
+    // The backend composes the final video on the same event loop that serves
+    // /api/v1/tasks/..., so an individual status request can stall for minutes.
+    // A stalled poll is NOT a failed generation - retry it a bounded number of
+    // times instead of tearing down a workflow that is still running.
+    const maxConsecutivePollErrors = 15;
+    let consecutivePollErrors = 0;
 
     for (;;) {
-      const status = await apiClient.getTaskStatus(taskId);
+      let status: TaskStatusResponse;
+      try {
+        status = await request<TaskStatusResponse>(`/api/v1/tasks/${taskId}`, {
+          timeoutMs: 180_000,
+        });
+        consecutivePollErrors = 0;
+      } catch (err) {
+        const transient = err instanceof APIException && err.retryable === true;
+        if (!transient || ++consecutivePollErrors > maxConsecutivePollErrors) {
+          throw err;
+        }
+        console.warn(
+          `[api] task ${taskId} status poll stalled (${consecutivePollErrors}/${maxConsecutivePollErrors}), retrying`
+        );
+        if (Date.now() > deadline) {
+          throw new APIException(
+            `Task polling timed out after ${Math.round(timeoutMs / 1000)}s`,
+            'TIMEOUT',
+            null,
+            true
+          );
+        }
+        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+        continue;
+      }
+
       onProgress?.(status);
 
       if (status.status === 'completed') return status;

@@ -71,9 +71,13 @@ python -m venv venv
 # 激活虚拟环境 (macOS/Linux)
 source venv/bin/activate
 
-# 安装依赖
-pip install -r requirements.txt
+# 安装依赖（CLI + 后端共用同一个虚拟环境）
+pip install -r requirements.txt -r backend/requirements.txt
 ```
+
+> 说明：根目录 `requirements.txt` 已包含 FastAPI/uvicorn 等 Web 依赖（版本与
+> `backend/requirements.txt` 一致），只装根目录清单也能启动后端；再装一次
+> `backend/requirements.txt` 可确保 `python-multipart`、`redis` 等后端专用依赖齐全。
 
 **前端依赖（Node.js）：**
 
@@ -99,7 +103,11 @@ cp .env.example .env
 # 必需的API密钥
 NANO_BANANA_API_KEY=your_nano_banana_api_key_here
 
-# 视频服务选择（veo3 或 sora2）
+# 图片服务选择（doubao / nano_banana / midjourney / ali_token_plan）
+# 前端 Step2/Step3 的「Auto Generate」会读取这里生效的服务；也可在设置中心修改
+IMAGE_SERVICE_TYPE=ali_token_plan
+
+# 视频服务选择（veo3 / sora2 / ali_token_plan）
 VIDEO_SERVICE_TYPE=veo3
 
 # Veo3 视频生成服务
@@ -641,6 +649,17 @@ npm run type-check
 # 构建检查
 npm run build
 ```
+
+**UI 自动化测试（Playwright 全流程 E2E）**:
+```bash
+# 先启动前后端（8000 / 3000），然后：
+# 冒烟：仅验证前端可访问（不消耗生成额度）
+python -m pytest tests/e2e -v -s -k home
+
+# 全流程：浏览器里走完 Step0→Step5，真实调用 Token Plan 生成 1 分钟以内短剧
+python -m pytest tests/e2e -v -s -m e2e --headed
+```
+详见 `tests/e2e/README.md`（环境变量、产物、常见问题）。
 
 ### 代码格式化
 

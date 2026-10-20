@@ -379,7 +379,9 @@ class DramaGenerationOrchestrator(BaseAgent):
                 video_results,
                 output_filename=output_filename,
                 bgm_path=self.config.get('bgm_path'),
-                add_subtitles=self.config.get('add_subtitles', False)
+                add_subtitles=self.config.get('add_subtitles', False),
+                # 合成实际在专用线程池中执行（不阻塞事件循环），进度 75% -> 95%
+                progress_callback=self._create_sub_progress_callback(75, 95)
             )
 
             await self._update_progress(95, "Saving metadata...")
@@ -512,7 +514,9 @@ class DramaGenerationOrchestrator(BaseAgent):
                 video_results,
                 output_filename=output_filename,
                 bgm_path=self.config.get('bgm_path'),
-                add_subtitles=False  # No subtitles in quick mode
+                add_subtitles=False,  # No subtitles in quick mode
+                # 合成实际在专用线程池中执行（不阻塞事件循环），进度 70% -> 95%
+                progress_callback=self._create_sub_progress_callback(70, 95)
             )
 
             await self._update_progress(95, "Saving metadata...")

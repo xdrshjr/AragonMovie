@@ -4,6 +4,13 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 loguru==0.7.2
 
+# Web API (FastAPI backend - see also backend/requirements.txt).
+# Needed by `cd backend && python run_dev.py`; pins match backend/requirements.txt
+# so installing this file alone is enough for CLI + backend.
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+python-multipart==0.0.6
+
 # HTTP clients
 httpx==0.25.2
 aiohttp==3.9.1

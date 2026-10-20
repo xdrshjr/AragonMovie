@@ -5,6 +5,7 @@ import { Card, Button, Input, ImageGrid, LoadingAnimation } from '@/components/u
 import { apiClient } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { processImageResults } from '@/lib/imageHelpers';
+import { resolveActiveImageService } from '@/lib/imageService';
 import { Character, APIException } from '@/lib/types';
 import { VideoType, VideoSubtype, VIDEO_TYPE_DEFINITIONS } from '@/lib/types/videoTypes';
 import { parseYamlScript, extractCharactersFromParsedScript } from '@/lib/yamlParser';
@@ -109,6 +110,14 @@ export const Step2CharacterImages: React.FC<Step2CharacterImagesProps> = ({
     try {
       logger.debug('Step2CharacterImages', `Creating ${character.imageCount} image generation requests for ${characterName}`);
       
+      // Use the image service actually configured in the backend
+      // (.env IMAGE_SERVICE_TYPE / settings center) instead of hardcoding one.
+      const imageService = await resolveActiveImageService();
+      logger.info(
+        'Step2CharacterImages',
+        `Using image service: ${imageService ?? 'backend default'}`
+      );
+
       const imagePromises = Array.from({ length: character.imageCount }).map((_, index) => {
         logger.debug('Step2CharacterImages', `Generating image ${index + 1}/${character.imageCount} for ${characterName}`);
         // Build character reference prompt similar to CLI
@@ -117,7 +126,7 @@ export const Step2CharacterImages: React.FC<Step2CharacterImagesProps> = ({
 
         return apiClient.generateImage({
           prompt,
-          service: 'doubao',
+          service: imageService,
           width: 1920,
           height: 1920,
           optimize_prompt: true,

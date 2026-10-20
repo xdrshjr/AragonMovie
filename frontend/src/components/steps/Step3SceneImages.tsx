@@ -5,6 +5,7 @@ import { Card, Button, Input, ImageGrid, LoadingAnimation } from '@/components/u
 import { apiClient } from '@/lib/api';
 import { logger } from '@/lib/logger';
 import { processImageResults } from '@/lib/imageHelpers';
+import { resolveActiveImageService } from '@/lib/imageService';
 import { Scene, APIException } from '@/lib/types';
 import { parseYamlScript, extractScenesFromParsedScript } from '@/lib/yamlParser';
 
@@ -102,10 +103,15 @@ export const Step3SceneImages: React.FC<Step3SceneImagesProps> = ({
     setError(null);
 
     try {
+      // Use the image service actually configured in the backend
+      // (.env IMAGE_SERVICE_TYPE / settings center) instead of hardcoding one.
+      const imageService = await resolveActiveImageService();
+      logger.info('Step3SceneImages', `Using image service: ${imageService ?? 'backend default'}`);
+
       const imagePromises = Array.from({ length: scene.imageCount }).map(() =>
         apiClient.generateImage({
           prompt: `${scene.location}, ${scene.time}, ${scene.description}, cinematic lighting, high quality, establishing shot`,
-          service: 'doubao',
+          service: imageService,
           width: 1920,
           height: 1080,
           optimize_prompt: true,

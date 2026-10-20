@@ -149,6 +149,13 @@ class BackendSettings(BaseSettings):
         env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = False
+        # config/settings.py (CLI) and this class share the SAME .env file but
+        # declare different key subsets (e.g. candidate_images_per_scene,
+        # judge_temperature, enable_scene_continuity only exist in the CLI
+        # Settings). pydantic-settings defaults to extra="forbid", so any
+        # CLI-only key made the backend die on startup with
+        # "ValidationError: ... Extra inputs are not permitted".
+        extra = "ignore"
 
 
 # Global settings instance

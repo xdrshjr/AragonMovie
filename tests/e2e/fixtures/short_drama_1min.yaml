@@ -1,0 +1,88 @@
+# E2E fixture: a ~24s three-scene short drama (under the 1 minute budget).
+# Duration per scene: 8s x 3 scenes = 24s (+ short transitions) < 60s.
+title: "城市微光"
+author: "AragonMovie E2E"
+description: "都市短剧：加班后的夜晚，一个人的温柔独白"
+
+characters:
+  - name: "林小满"
+    description: "26岁都市白领，短发，米色风衣，温柔安静"
+    age: 26
+    gender: "female"
+    appearance: "黑色齐耳短发，米色风衣，白色运动鞋，肩背帆布包"
+
+scenes:
+  - scene_id: "scene_001"
+    location: "写字楼大堂落地窗前"
+    time: "傍晚"
+    weather: "晴"
+    atmosphere: "夕阳暖光穿过玻璃，地面洒满金色光斑"
+    description: "现代写字楼大堂，落地窗外是金色夕阳下的城市天际线，行人脚步匆匆"
+    shot_type: "medium_shot"
+    camera_movement: "dolly"
+    duration: 8.0
+    visual_style: "cinematic"
+    color_tone: "warm"
+    action: "林小满抱着文件夹站在窗前，轻轻呼出一口气"
+    extract_frame_index: -5
+    base_image_filename: null
+    characters:
+      - "林小满"
+    dialogues:
+      - character: "林小满"
+        content: "今天也辛苦了。"
+        emotion: "释然"
+        voice_style: "轻声自语"
+    narrations:
+      - content: "城市的灯，一盏一盏亮起来。"
+        voice_style: "温柔旁白"
+    sound_effects: []
+    sub_scenes: []
+
+  - scene_id: "scene_002"
+    location: "夜晚的城市街道"
+    time: "夜晚"
+    weather: "晴"
+    atmosphere: "霓虹与路灯交织，雨后地面反射灯光"
+    description: "湿润的柏油路反射着霓虹与路灯，林小满撑着一把浅色雨伞慢慢前行"
+    shot_type: "long_shot"
+    camera_movement: "tracking"
+    duration: 8.0
+    visual_style: "cinematic"
+    color_tone: "cool"
+    action: "林小满沿着街道缓慢行走，伞面被灯光照亮"
+    extract_frame_index: -5
+    base_image_filename: null
+    characters:
+      - "林小满"
+    dialogues:
+      - character: "林小满"
+        content: "明天，会是新的一天。"
+        emotion: "期待"
+        voice_style: "轻声"
+    narrations: []
+    sound_effects: []
+    sub_scenes: []
+
+  - scene_id: "scene_003"
+    location: "公寓天台"
+    time: "深夜"
+    weather: "多云"
+    atmosphere: "城市灯海在脚下铺开，夜风轻拂"
+    description: "公寓天台，远处是整座城市的灯海，林小满背对镜头望向远方"
+    shot_type: "full_shot"
+    camera_movement: "zoom"
+    duration: 8.0
+    visual_style: "cinematic"
+    color_tone: "cool"
+    action: "林小满把文件夹放在栏杆上，抬头看向星空，嘴角微微上扬"
+    extract_frame_index: -5
+    base_image_filename: null
+    characters:
+      - "林小满"
+    dialogues: []
+    narrations:
+      - content: "她终于把这一天的疲惫，交给了夜色。"
+        voice_style: "温柔旁白"
+    sound_effects: []
+    sub_scenes: []

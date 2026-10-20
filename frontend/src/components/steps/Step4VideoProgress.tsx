@@ -212,7 +212,11 @@ export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
 
   const pollTaskStatus = async (taskId: string, isQuickMode: boolean = false) => {
     try {
-      await apiClient.pollTaskUntilComplete(
+      // pollTaskUntilComplete resolves with the final (completed) status, so no
+      // second getTaskStatus() call is needed here. That extra call used the
+      // default 60s timeout and could surface a spurious TIMEOUT/"Generation
+      // failed" even though the task had already finished successfully.
+      const finalStatus = await apiClient.pollTaskUntilComplete(
         taskId,
         (statusUpdate: TaskStatusResponse) => {
           setProgress(statusUpdate.progress);
@@ -258,9 +262,7 @@ export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
         14400000 // 4 hours max (for very long video generation)
       );
 
-      // Get final result
-      const finalStatus = await apiClient.getTaskStatus(taskId);
-      
+      // Result comes from the resolved poll status (see above)
       if (finalStatus.status === 'completed' && finalStatus.result) {
         const workflowResult = finalStatus.result;
         

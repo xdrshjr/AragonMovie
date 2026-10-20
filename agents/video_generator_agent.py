@@ -13,6 +13,7 @@ from models.script_models import Scene, SubScene, CameraMovement
 from utils.concurrency import ConcurrencyLimiter
 from utils.prompt_optimizer import PromptOptimizer
 from utils.video_utils import FFmpegProcessor
+from utils.blocking import run_blocking
 from config.settings import settings
 import logging
 
@@ -492,7 +493,9 @@ class VideoGenerationAgent(BaseAgent):
             extracted_frame_path = self.output_dir / f"{scene_id}_extracted_frame_{timestamp}.png"
             
             try:
-                self.ffmpeg_processor.extract_frame(
+                # ffmpeg 子进程同步阻塞，必须放到线程池，避免卡住后端事件循环
+                await run_blocking(
+                    self.ffmpeg_processor.extract_frame,
                     video_path=base_video_path,
                     frame_index=scene.extract_frame_index,
                     output_path=str(extracted_frame_path)
@@ -561,7 +564,9 @@ class VideoGenerationAgent(BaseAgent):
             final_video_path = self.output_dir / f"{scene_id}_final_{timestamp}.mp4"
             
             try:
-                self.ffmpeg_processor.concatenate_videos_filter(
+                # 拼接同样是同步 ffmpeg 子进程调用
+                await run_blocking(
+                    self.ffmpeg_processor.concatenate_videos_filter,
                     video_paths=video_paths_to_concat,
                     output_path=str(final_video_path)
                 )
@@ -790,7 +795,10 @@ class VideoGenerationAgent(BaseAgent):
         frame_path = output_dir / f"{video_name}_frame_{abs(frame_index)}.png"
 
         # 使用 FFmpegProcessor 提取帧
-        self.ffmpeg_processor.extract_frame(
+        # ffmpeg 子进程是同步阻塞的：放到线程池执行，否则会卡住后端事件循环，
+        # 导致 /api/v1/tasks/{id} 状态轮询超时（前端误判为生成失败）
+        await run_blocking(
+            self.ffmpeg_processor.extract_frame,
             video_path=video_path,
             frame_index=frame_index,
             output_path=str(frame_path)

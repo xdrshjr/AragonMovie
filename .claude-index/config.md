@@ -26,13 +26,14 @@
 - models/
 
 ## Tech Stack
-- Frontend: Next.js 14.2 (App Router) + React 18.3 + TypeScript 5.3 + Tailwind CSS 3.4
+- Frontend: Next.js 14.2 (App Router) + React 18.3 + TypeScript 5.3 + Tailwind CSS 3.4 + js-yaml
 - Backend: FastAPI + Uvicorn (backend/) plus Python CLI pipeline (repo root)
-- Language: Python (~77%), TypeScript (~23%)
+- Language: Python (~73%, 127 files), TypeScript/TSX (~26%, 45 files)
+- Default model provider: Ali Token Plan / DashScope (`ali_token_plan`) for text, image and video
 
 ## Index Settings
-- Generated: 2026-10-10
-- Project Root: E:\TMP-PROJECT\AragonMovie
+- Generated: 2026-10-20
+- Project Root: E:\TAKO-PROJECTS\AragonMovie
 - Index Version: 1.0
 - Environments Configured: No
 

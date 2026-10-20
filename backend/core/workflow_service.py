@@ -24,6 +24,7 @@ from backend.config import settings
 from core.project_manager import ProjectManager
 from core.runner import ProjectRunner
 from core.errors import ProjectError
+from utils.blocking import run_blocking
 
 logger = get_logger(__name__)
 
@@ -143,7 +144,10 @@ class WorkflowService:
             if progress_callback:
                 await progress_callback(10, "Loading project configuration...")
             
-            project_config, abs_path = self.project_manager.load_project(project_path)
+            # 同步文件 I/O 交给线程池，避免阻塞事件循环
+            project_config, abs_path = await run_blocking(
+                self.project_manager.load_project, project_path
+            )
             logger.debug(f"WorkflowService | Project config loaded | path={abs_path}")
             
             # Step 3: Prepare scene images mapping for runner
@@ -198,7 +202,9 @@ class WorkflowService:
             if progress_callback:
                 await progress_callback(95, "Packaging assets...")
             
-            assets = self.asset_manager.save_workflow_assets(
+            # 资源打包（复制文件 / 生成缩略图）同样是同步阻塞操作
+            assets = await run_blocking(
+                self.asset_manager.save_workflow_assets,
                 task_id=task_id,
                 project_path=project_path,
                 video_path=video_path,

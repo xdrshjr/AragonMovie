@@ -20,8 +20,8 @@ python -m venv venv
 .\venv\Scripts\activate  # Windows
 source venv/bin/activate  # macOS/Linux
 
-# Install dependencies
-pip install -r requirements.txt
+# Install dependencies (CLI + backend share one virtualenv)
+pip install -r requirements.txt -r backend/requirements.txt
 
 # Configure environment
 cp .env.example .env
@@ -414,7 +414,12 @@ When creating new agents:
 - Access config via `config.settings` singleton
 - Override config per-agent via constructor `config` parameter
 - Use `Optional[str]` for optional API keys (e.g., openai_api_key)
-- Backend config loaded via `backend/config.py` using Pydantic settings
+- Backend config loaded via `backend/config.py` using Pydantic settings.
+  `BackendSettings` uses `extra="ignore"`: it shares `.env` with the CLI
+  `config/settings.py`, which declares additional keys (e.g.
+  `CANDIDATE_IMAGES_PER_SCENE`, `JUDGE_TEMPERATURE`, `ENABLE_SCENE_CONTINUITY`).
+  Without `extra="ignore"` any CLI-only key aborted backend startup with
+  `ValidationError: ... Extra inputs are not permitted`
 - Frontend uses environment variables via Next.js `.env.local`
 
 ### Runtime Settings Center (2026-10)
@@ -493,6 +498,26 @@ wrappers are reset (`backend/core/service_wrapper.py::reset_runtime_services`).
 - Use `asyncio.gather()` for parallel operations
 - Use `asyncio.Semaphore` for rate limiting
 - TaskManager provides callback registration for status updates
+- **Never run blocking work inside a coroutine.** moviepy composition, ffmpeg
+  subprocesses and large file copies must go through `utils/blocking.py`:
+  `await run_media_blocking(...)` for heavy media work (dedicated bounded thread
+  pool, size via `MEDIA_EXECUTOR_WORKERS`, default 2) and `await run_blocking(...)`
+  for plain sync I/O. Otherwise the single uvicorn worker's event loop freezes for
+  minutes while `POST /api/v1/workflow/generate` composes the final video, every
+  `GET /api/v1/tasks/{id}` poll queues up behind it, and the frontend eventually
+  reports a timeout/`Generation failed` even though the mp4 was written fine.
+  Covered by `VideoComposerAgent._compose_sync` (worker thread) and
+  `test_execute_runs_composition_off_event_loop`. The same rule applies to the
+  ffmpeg helpers (`FFmpegProcessor.extract_frame` / `concatenate_videos_filter`)
+  and to `backend.core.project_manager` (JSON persistence + ffmpeg thumbnails,
+  invoked from the task status callback).
+- Compose progress comes from a `proglog` logger that reads the
+  `frame_index` bar (moviepy 2.x). Silence stdout with `logged_bars=None`,
+  throttle with `progress_min_interval` (default 0.5s), and drain the scheduled
+  coroutines before `execute()` returns so task progress stays monotonic.
+  `tests/test_agents/test_video_composer_e2e.py` writes real clips with ffmpeg
+  (skipped without ffmpeg) and would catch both a broken bar name and moviepy
+  1.x API drift (`subclip`/`volumex`/`set_audio`, all removed in 2.x).
 
 **Logging**:
 - Structured logging via `loguru` in CLI
@@ -516,6 +541,16 @@ wrappers are reset (`backend/core/service_wrapper.py::reset_runtime_services`).
 - Centralized in `lib/api.ts`
 - Type definitions in `lib/types.ts` and `lib/types/*.ts`
 - Error handling with try-catch and user-friendly messages
+- `pollTaskUntilComplete()` is the single source of truth for a finished task:
+  it retries transient poll errors (TIMEOUT/NETWORK_ERROR/5xx, up to 15 in a
+  row) and resolves with the final status. Do not follow it with a second
+  `getTaskStatus()` call — that extra request used the default 60s timeout and
+  produced spurious "Generation failed" states.
+- Image service selection must never be hardcoded: call
+  `resolveActiveImageService()` (`lib/imageService.ts`) which reads the backend
+  settings (`image.service_type`, falling back to the backend `.env`
+  `IMAGE_SERVICE_TYPE`) and caches for 30s; `invalidateActiveImageService()`
+  runs after the settings center saves.
 
 **Styling**:
 - Tailwind CSS with custom Apple-inspired design
@@ -550,7 +585,9 @@ Key files demonstrate working implementation:
 - `moviepy` >=2.0.0 - Video editing
 - `loguru` 0.7.2 - Advanced logging
 - `pytest` 7.4.3 + `pytest-asyncio` 0.21.1 - Testing
-- `fastapi` + `uvicorn` - Web API framework (backend)
+- `fastapi` 0.109.0 + `uvicorn[standard]` 0.27.0 + `python-multipart` 0.0.6 -
+  Web API framework (backend); pinned identically in `requirements.txt` and
+  `backend/requirements.txt` so either install path can start the server
 
 ### Frontend Packages (frontend/package.json)
 - `next` 14.2.0 - React framework
@@ -706,7 +743,7 @@ ai-movie-agent-guide/
 This project has a pre-generated index for quick codebase understanding.
 
 - **Location:** `.claude-index/index.md`
-- **Last Updated:** 2026-10-10
+- **Last Updated:** 2026-10-20
 - **Contents:** Project overview, feature map, file index, exported symbols, module dependencies
 
 **Usage:** Read `.claude-index/index.md` to quickly understand the project structure before making changes. The index provides a navigation map of the codebase without needing to explore every file.

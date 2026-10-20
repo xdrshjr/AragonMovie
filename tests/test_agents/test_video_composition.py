@@ -442,6 +442,106 @@ class TestDramaGenerationOrchestrator:
         pass
 
 
+class TestVideoComposerNonBlocking:
+    """BUG 2 regression: composition must never run on the asyncio event loop.
+
+    The backend serves `GET /api/v1/tasks/{id}` from the same single-worker event
+    loop that starts the workflow, so a synchronous moviepy composition there
+    froze every status poll for minutes and the frontend reported the run as
+    failed even though the mp4 had been written.
+    """
+
+    @pytest.mark.asyncio
+    async def test_execute_runs_composition_off_event_loop(self, tmp_path):
+        import time
+
+        composer = VideoComposerAgent(output_dir=tmp_path)
+        clip_path = tmp_path / "clip_001.mp4"
+        clip_path.write_bytes(b"stub")
+
+        def fake_compose(
+            video_results,
+            output_filename,
+            bgm_path,
+            add_subtitles,
+            report_progress=None
+        ):
+            # Stands in for the multi-minute moviepy / ffmpeg composition
+            time.sleep(0.4)
+            return str(tmp_path / output_filename)
+
+        tick_times = []
+
+        async def ticker(stop):
+            while not stop.is_set():
+                tick_times.append(time.monotonic())
+                await asyncio.sleep(0.02)
+
+        video_results = [
+            {"scene_id": "scene_001", "success": True, "video_path": str(clip_path)}
+        ]
+
+        stop = asyncio.Event()
+        ticker_task = asyncio.create_task(ticker(stop))
+        await asyncio.sleep(0.05)  # let the ticker establish itself first
+
+        # Patch the instance so the stub is not bound as a method
+        with patch.object(composer, "_compose_sync", new=fake_compose):
+            start = time.monotonic()
+            output_path = await composer.execute(video_results)
+            end = time.monotonic()
+
+        stop.set()
+        await ticker_task
+
+        # Ticks recorded *while* the composition was running: with the bug the
+        # whole 0.4s block happens inside one task, so the loop cannot tick.
+        responsive_ticks = [t for t in tick_times if start <= t <= end]
+
+        assert output_path == str(tmp_path / "final_drama.mp4")
+        assert len(responsive_ticks) >= 5, (
+            f"event loop was blocked while composing "
+            f"(only {len(responsive_ticks)} ticks in {end - start:.2f}s); "
+            "composition must run via utils.blocking.run_media_blocking"
+        )
+
+    @pytest.mark.asyncio
+    async def test_progress_callback_fires_from_worker_thread(self, tmp_path):
+        composer = VideoComposerAgent(output_dir=tmp_path)
+        clip_path = tmp_path / "clip_001.mp4"
+        clip_path.write_bytes(b"stub")
+
+        observed = []
+
+        async def on_progress(percent, message):
+            observed.append((percent, message))
+
+        def fake_compose(
+            video_results,
+            output_filename,
+            bgm_path,
+            add_subtitles,
+            report_progress=None
+        ):
+            if report_progress:
+                report_progress(50.0, "halfway")
+            return str(tmp_path / output_filename)
+
+        video_results = [
+            {"scene_id": "scene_001", "success": True, "video_path": str(clip_path)}
+        ]
+
+        # Patch the instance so the stub is not bound as a method
+        with patch.object(composer, "_compose_sync", new=fake_compose):
+            await composer.execute(video_results, progress_callback=on_progress)
+
+        # run_coroutine_threadsafe schedules the coroutine on the loop
+        await asyncio.sleep(0.05)
+
+        assert observed, "compose progress callback never reached the event loop"
+        assert observed[0][0] == 50.0
+
+
 # Run tests
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

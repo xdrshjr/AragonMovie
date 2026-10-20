@@ -66,3 +66,7 @@ htmlcov/
 
 # Backend runtime project records (created at runtime, not source)
 backend/projects/
+# Temp projects created by the web workflow service (runtime output)
+backend/temp_projects/
+# UI end-to-end run artifacts (screenshots / reports / generated video)
+tests/e2e/artifacts/
