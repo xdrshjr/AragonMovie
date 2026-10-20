@@ -55,12 +55,17 @@ FIELD_MAP: List[Tuple[str, str]] = [
     ("text.enable_character_consistency_judge", "enable_character_consistency_judge"),
     # voice
     ("voice.enabled", "enable_tts"),
+    ("voice.provider", "tts_provider"),
     ("voice.api_key", "tts_api_key"),
     ("voice.base_url", "tts_base_url"),
     ("voice.model", "tts_model"),
     ("voice.default_voice", "tts_default_voice"),
     ("voice.default_format", "tts_default_format"),
     ("voice.default_speed", "tts_default_speed"),
+    ("voice.native_base_url", "tts_native_base_url"),
+    ("voice.native_api_key", "tts_native_api_key"),
+    ("voice.native_model", "tts_native_model"),
+    ("voice.native_voice", "tts_native_voice"),
     # video
     ("video.service_type", "video_service_type"),
     ("video.veo3.api_key", "veo3_api_key"),
@@ -85,6 +90,7 @@ FIELD_MAP: List[Tuple[str, str]] = [
     ("video.ali_token_plan.r2v_model", "ali_video_r2v_model"),
     ("video.ali_token_plan.default_size", "ali_video_default_size"),
     ("video.ali_token_plan.default_duration", "ali_video_default_duration"),
+    ("video.ali_token_plan.watermark", "ali_video_watermark"),
     # image
     ("image.service_type", "image_service_type"),
     ("image.doubao.api_key", "doubao_api_key"),
@@ -123,6 +129,7 @@ SECRET_PATHS = {
     "text.fast_llm.api_key",
     "text.judge_llm.api_key",
     "voice.api_key",
+    "voice.native_api_key",
     "video.veo3.api_key",
     "video.sora2.api_key",
     "image.doubao.api_key",
@@ -446,17 +453,24 @@ def _merge_write_only(base_dump: Dict, stored: Dict) -> Dict:
     return walk(base_dump, stored or {})
 
 
+def _is_write_only_field(field: str) -> bool:
+    """True for ``api_key`` and its nested variants (``voice.native_api_key``)."""
+    return field == "api_key" or field.endswith("_api_key")
+
+
 def _merge_category(current_cat, incoming_dump: Dict) -> None:
     """Apply one category's partial update onto the current model object.
 
-    ``api_key=None`` (or a value identical to the current MASKED form, in
-    case the UI echoes it back) keeps the stored key; ``""`` clears it.
+    Write-only key semantics cover ``api_key`` AND nested variants such as
+    ``voice.native_api_key``: ``None`` (or a value identical to the current
+    MASKED form, in case the UI echoes it back) keeps the stored key; ``""``
+    clears it.
     """
     for field, value in incoming_dump.items():
-        if field == "api_key" and value is None:
-            continue
-        if field == "api_key":
-            current_key = getattr(current_cat, "api_key") or ""
+        if _is_write_only_field(field):
+            if value is None:
+                continue
+            current_key = getattr(current_cat, field, None) or ""
             if value == mask_key(current_key):
                 continue
         if isinstance(value, dict) and hasattr(current_cat, field):

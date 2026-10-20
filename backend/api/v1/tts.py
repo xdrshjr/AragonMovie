@@ -21,7 +21,11 @@ parent_dir = Path(__file__).parent.parent.parent.parent
 if str(parent_dir) not in sys.path:
     sys.path.insert(0, str(parent_dir))
 
-from services.tts_service import TTSService, TTSError  # noqa: E402
+from services.tts_service import (  # noqa: E402
+    TTSError,
+    create_tts_service,
+    sniff_audio_format,
+)
 
 logger = get_logger(__name__)
 router = APIRouter()
@@ -81,7 +85,17 @@ async def generate_speech(request: TTSGenerateRequest):
     import time
     start = time.time()
 
-    service = TTSService()
+    try:
+        # Raises TTSError (non-retryable) when the configured gateway has no
+        # usable speech route, e.g. the Ali Token Plan gateway.
+        service = create_tts_service()
+    except TTSError as e:
+        logger.error(f"TTS is not usable with the current settings: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
+
     try:
         audio = await service.text_to_speech_bytes(
             text=request.text,
@@ -108,8 +122,16 @@ async def generate_speech(request: TTSGenerateRequest):
     duration_ms = int((time.time() - start) * 1000)
     logger.info(f"TTS generation completed | bytes={len(audio)} | duration={duration_ms}ms")
 
+    # The native route ignores response_format, so trust the actual bytes.
+    actual_fmt = sniff_audio_format(audio) or fmt
+    if actual_fmt not in CONTENT_TYPES:
+        actual_fmt = fmt
+
     return Response(
         content=audio,
-        media_type=CONTENT_TYPES[fmt],
-        headers={"X-TTS-Duration-Ms": str(duration_ms)},
+        media_type=CONTENT_TYPES[actual_fmt],
+        headers={
+            "X-TTS-Duration-Ms": str(duration_ms),
+            "X-TTS-Format": actual_fmt,
+        },
     )

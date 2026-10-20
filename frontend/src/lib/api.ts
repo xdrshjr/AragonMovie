@@ -164,6 +164,8 @@ export interface ModelSettings {
       r2v_model: string;
       default_size: string;
       default_duration: number;
+      /** Request the watermarked variant (default false). */
+      watermark: boolean;
     };
   };
   image: {
@@ -199,14 +201,23 @@ export interface ProviderConfig {
   model: string;
 }
 
+export type TTSProvider = 'auto' | 'openai_compatible' | 'dashscope_native';
+
 export interface VoiceConfig {
   enabled: boolean;
+  /** Transport selection; see backend/core/settings_models.py::VoiceSettings */
+  provider: TTSProvider;
   api_key: string | null;
   base_url: string;
   model: string;
   default_voice: string;
   default_format: string;
   default_speed: number;
+  /** DashScope native synthesis (qwen-tts / cosyvoice-v2) */
+  native_base_url: string;
+  native_api_key: string | null;
+  native_model: string;
+  native_voice: string;
 }
 
 /** Normalized agent-chat SSE event (see backend settings.py endpoint docs). */

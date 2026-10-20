@@ -7,6 +7,26 @@ import { logger } from '@/lib/logger';
 import { Scene, Character, LogEntry, TaskStatusResponse, APIException, QuickModeScene } from '@/lib/types';
 import { VideoType, VideoSubtype } from '@/lib/types/videoTypes';
 
+/**
+ * Map backend progress (0-100) to the stage label shown in the UI and the log.
+ * Kept pure so the log line can use the freshly computed value.
+ */
+export function resolveStage(progress: number, isQuickMode: boolean): string {
+  if (isQuickMode) {
+    if (progress < 10) return 'Preparing Images';
+    if (progress < 70) return 'Generating Videos from Images';
+    if (progress < 95) return 'Composing Final Video';
+    return 'Finalizing';
+  }
+  if (progress < 10) return 'Initializing Project';
+  if (progress < 20) return 'Parsing Script';
+  if (progress < 40) return 'Processing Character References';
+  if (progress < 60) return 'Generating Scene Images';
+  if (progress < 85) return 'Generating Scene Videos';
+  if (progress < 98) return 'Composing Final Video';
+  return 'Finalizing';
+}
+
 interface Step4VideoProgressProps {
   polishedScript: string;
   characters: Character[];
@@ -222,41 +242,16 @@ export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
           setProgress(statusUpdate.progress);
           setStatus(statusUpdate.status);
 
-          // Update stage based on progress and mode
-          if (isQuickMode) {
-            // Quick mode stages
-            if (statusUpdate.progress < 10) {
-              setCurrentStage('Preparing Images');
-            } else if (statusUpdate.progress < 70) {
-              setCurrentStage('Generating Videos from Images');
-            } else if (statusUpdate.progress < 95) {
-              setCurrentStage('Composing Final Video');
-            } else {
-              setCurrentStage('Finalizing');
-            }
-          } else {
-            // Full mode stages
-            if (statusUpdate.progress < 10) {
-              setCurrentStage('Initializing Project');
-            } else if (statusUpdate.progress < 20) {
-              setCurrentStage('Parsing Script');
-            } else if (statusUpdate.progress < 40) {
-              setCurrentStage('Processing Character References');
-            } else if (statusUpdate.progress < 60) {
-              setCurrentStage('Generating Scene Images');
-            } else if (statusUpdate.progress < 85) {
-              setCurrentStage('Generating Scene Videos');
-            } else if (statusUpdate.progress < 98) {
-              setCurrentStage('Composing Final Video');
-            } else {
-              setCurrentStage('Finalizing');
-            }
-          }
+          // setCurrentStage is async, so reading `currentStage` here would log
+          // the value from the closure captured when polling started (always
+          // "Initializing"). Compute the stage once and use that value.
+          const stage = resolveStage(statusUpdate.progress, isQuickMode);
+          setCurrentStage(stage);
 
           addLog(
             'info',
             'WorkflowGeneration',
-            `Progress: ${statusUpdate.progress}% - ${currentStage}`
+            `Progress: ${statusUpdate.progress}% - ${stage}`
           );
         },
         14400000 // 4 hours max (for very long video generation)

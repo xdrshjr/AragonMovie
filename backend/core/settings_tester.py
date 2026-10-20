@@ -156,49 +156,115 @@ async def test_text(settings: ModelSettings) -> List[ConnectionTestResult]:
 
 
 async def test_voice(settings: ModelSettings) -> List[ConnectionTestResult]:
-    """Full verification via a minimal /audio/speech request."""
+    """Full verification via a minimal speech request (transport-aware).
+
+    The transport and endpoint come from ``services.tts_service`` so the probe
+    can never drift from what the pipeline will actually do.
+    """
+    from services.tts_service import native_endpoint_for, resolve_tts_transport
+
     voice = settings.voice
     name = "tts"
-    if not voice.api_key:
-        return [ConnectionTestResult(
-            category="voice", target=name, success=False,
-            message="未配置 API Key", verified="full",
-        )]
+    has_native_key = bool(voice.native_api_key)
+    transport = resolve_tts_transport(
+        voice.base_url,
+        voice.provider,
+        has_native_key=has_native_key,
+        strict=False,
+    )
+
+    if transport == "dashscope_native":
+        api_key = voice.native_api_key or voice.api_key
+        if not api_key:
+            return [ConnectionTestResult(
+                category="voice", target=name, success=False,
+                message=(
+                    "未配置 DashScope Key：该网关没有 HTTP 合成接口，"
+                    "请在“语音合成”里切换 TTS 通道为 dashscope_native 并填写 DashScope Key"
+                ),
+                verified="full",
+            )]
+        native_model = voice.native_model or "qwen-tts"
+        url = f"{voice.native_base_url.rstrip('/')}{native_endpoint_for(native_model)}"
+        payload = {
+            "model": native_model,
+            "input": {"text": "你好", "voice": voice.native_voice or voice.default_voice},
+        }
+    else:
+        api_key = voice.api_key
+        if not api_key:
+            from services.tts_service import is_known_broken_speech_gateway
+
+            if is_known_broken_speech_gateway(voice.base_url):
+                return [ConnectionTestResult(
+                    category="voice", target=name, success=False,
+                    message=(
+                        "该网关没有一次性 HTTP 合成接口：请切换 TTS 通道为 "
+                        "dashscope_native 并填写 DashScope Key，或改用其他 "
+                        "OpenAI 兼容 TTS 网关"
+                    ),
+                    verified="full",
+                )]
+            return [ConnectionTestResult(
+                category="voice", target=name, success=False,
+                message="未配置 API Key", verified="full",
+            )]
+        url = f"{_base(voice.base_url)}/audio/speech"
+        payload = {
+            "model": voice.model,
+            "voice": voice.default_voice,
+            "input": "你好",
+            "response_format": voice.default_format,
+        }
+
     start = time.time()
     async with httpx.AsyncClient(timeout=TIMEOUT) as client:
         try:
             resp = await client.post(
-                f"{_base(voice.base_url)}/audio/speech",
-                headers={"Authorization": f"Bearer {voice.api_key}"},
-                json={
-                    "model": voice.model,
-                    "voice": voice.default_voice,
-                    "input": "你好",
-                    "response_format": voice.default_format,
-                },
+                url,
+                headers={"Authorization": f"Bearer {api_key}"},
+                json=payload,
             )
             latency = _latency(start)
             if resp.status_code == 200:
                 size = len(resp.content)
-                return ConnectionTestResult(
+                if transport == "dashscope_native":
+                    # Native synthesis answers JSON (audio url/base64), not raw bytes
+                    audio = ((resp.json().get("output") or {}).get("audio") or {})
+                    size = len(audio.get("url") or audio.get("data") or "")
+                    if not size:
+                        return [ConnectionTestResult(
+                            category="voice", target=name, success=False,
+                            latency_ms=latency,
+                            message=(
+                                "接口可达但没有返回音频：当前原生模型可能只支持 "
+                                "WebSocket 实时合成，请改用 qwen-tts / cosyvoice-v2"
+                            ),
+                            detail=_excerpt(resp.text), verified="partial",
+                        )]
+                return [ConnectionTestResult(
                     category="voice", target=name, success=True,
                     latency_ms=latency,
-                    message=f"语音合成测试成功（返回 {size} 字节音频）",
+                    message=(
+                        f"语音合成测试成功（{transport}，返回 {size} 字节音频）"
+                        if transport == "openai_compatible"
+                        else f"语音合成测试成功（{transport}，音频 {size} 字节）"
+                    ),
                     verified="full",
-                )
-            return ConnectionTestResult(
+                )]
+            return [ConnectionTestResult(
                 category="voice", target=name, success=False,
                 latency_ms=latency,
-                message=f"API 返回 {resp.status_code}",
+                message=f"API 返回 {resp.status_code}（{transport}）",
                 detail=_excerpt(resp.text), verified="full",
-            )
+            )]
         except httpx.HTTPError as e:
-            return ConnectionTestResult(
+            return [ConnectionTestResult(
                 category="voice", target=name, success=False,
                 latency_ms=_latency(start),
                 message=f"连接失败: {e.__class__.__name__}",
                 detail=str(e), verified="full",
-            )
+            )]
 
 
 async def _test_video_provider(

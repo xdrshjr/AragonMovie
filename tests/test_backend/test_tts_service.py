@@ -12,10 +12,16 @@ from services.tts_service import TTSService, TTSError  # noqa: E402
 
 
 class _FakeResponse:
-    def __init__(self, status_code=200, content=b""):
+    def __init__(self, status_code=200, content=b"", json_body=None):
         self.status_code = status_code
         self.content = content
         self.text = ""
+        self._json_body = json_body
+
+    def json(self):
+        if self._json_body is None:
+            raise ValueError("no JSON body")
+        return self._json_body
 
 
 class _FakeClient:
@@ -23,8 +29,13 @@ class _FakeClient:
         self._response = response
         self.calls = []
 
-    async def post(self, url, json=None):
+    async def post(self, url, json=None, headers=None):
         self.calls.append((url, json))
+        self.headers = headers
+        return self._response
+
+    async def get(self, url, headers=None):
+        self.calls.append((url, None))
         return self._response
 
     async def aclose(self):
@@ -51,7 +62,8 @@ def test_bytes_success(service, monkeypatch):
     audio = asyncio.run(service.text_to_speech_bytes("你好世界"))
     assert audio == b"FAKE_MP3_BYTES"
     url, payload = fake.calls[0]
-    assert url == "/audio/speech"
+    # The client is transport-agnostic now, so the URL is absolute
+    assert url == "https://tts.example.com/v1/audio/speech"
     assert payload["model"] == "tts-1"
     assert payload["voice"] == "alloy"
     assert payload["input"] == "你好世界"

@@ -22,6 +22,7 @@ from moviepy import (
 from moviepy.audio.AudioClip import CompositeAudioClip
 from moviepy.audio.fx import AudioLoop
 from moviepy.video.fx import FadeIn, FadeOut
+from services.tts_service import TTSError, create_tts_service
 from utils.blocking import run_media_blocking
 from utils.video_utils import FFmpegProcessor
 
@@ -98,6 +99,9 @@ class VideoComposerAgent(BaseAgent):
 
         reporter, pending = self._make_thread_progress_reporter(progress_callback)
 
+        # 台词/旁白配音（可选）：TTS 是异步的，必须在进入工作线程前准备好音频文件
+        narration_audio = await self._synthesize_narration_audio(successful_videos)
+
         try:
             output_path = await run_media_blocking(
                 self._compose_sync,
@@ -106,6 +110,7 @@ class VideoComposerAgent(BaseAgent):
                 bgm_path,
                 add_subtitles,
                 reporter,
+                narration_audio,
             )
         except Exception as e:
             await self._drain(pending)
@@ -172,7 +177,8 @@ class VideoComposerAgent(BaseAgent):
         output_filename: str,
         bgm_path: Optional[str],
         add_subtitles: bool,
-        report_progress: Optional[Callable[[float, str], None]] = None
+        report_progress: Optional[Callable[[float, str], None]] = None,
+        narration_audio: Optional[Dict[str, str]] = None,
     ) -> str:
         """同步完成整个合成流程（只允许在 worker 线程中调用）"""
         final_clip: Optional[VideoFileClip] = None
@@ -190,6 +196,14 @@ class VideoComposerAgent(BaseAgent):
             # 拼接视频
             final_clip = concatenate_videoclips(clips, method="compose")
             closeables.append(final_clip)
+
+            # 添加台词/旁白配音（起点用真实片段时长，而不是请求时长）
+            if narration_audio:
+                scene_starts = self._scene_start_offsets(video_results, clips)
+                final_clip = self._add_narration_audio(
+                    final_clip, scene_starts, narration_audio, closeables
+                )
+                closeables.append(final_clip)
 
             # 添加背景音乐
             if bgm_path:
@@ -389,6 +403,186 @@ class VideoComposerAgent(BaseAgent):
         processed[-1] = processed[-1].with_effects([FadeOut(duration)])
 
         return processed
+
+    # ------------------------------------------------------------------
+    # TTS narration audio
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _tts_audio_format() -> str:
+        """配音文件扩展名（跟随 TTS_DEFAULT_FORMAT）"""
+        try:
+            from config.settings import settings as cli_settings
+            return getattr(cli_settings, 'tts_default_format', 'mp3') or 'mp3'
+        except Exception:  # pragma: no cover - settings always importable
+            return 'mp3'
+
+    def _tts_enabled(self) -> bool:
+        """配音开关：显式配置优先，否则跟随运行时的 ENABLE_TTS"""
+        value = self.config.get('enable_tts')
+        if value is not None:
+            return bool(value)
+        try:
+            from config.settings import settings as cli_settings
+            return bool(getattr(cli_settings, 'enable_tts', False))
+        except Exception:  # pragma: no cover - settings always importable
+            return False
+
+    @staticmethod
+    def _scene_speech_text(result: Dict[str, Any]) -> str:
+        """拼出该场景需要朗读的文本（台词 + 旁白）"""
+        parts: List[str] = []
+        for dialogue in result.get('dialogues') or []:
+            content = (dialogue or {}).get('content')
+            if content:
+                parts.append(str(content).strip())
+        for narration in result.get('narrations') or []:
+            content = (narration or {}).get('content')
+            if content:
+                parts.append(str(content).strip())
+        return ' '.join(part for part in parts if part).strip()
+
+    async def _synthesize_narration_audio(
+        self,
+        video_results: List[Dict[str, Any]]
+    ) -> Dict[str, str]:
+        """为每个场景合成配音文件，返回 {scene_id: audio_path}
+
+        配音是可选增强：未启用、没有文本或 TTS 不可用时返回空字典并告警，
+        绝不让整条合成失败。
+        """
+        if not self._tts_enabled():
+            return {}
+
+        texts: Dict[str, str] = {}
+        for result in video_results:
+            scene_id = str(result.get('scene_id'))
+            text = self._scene_speech_text(result)
+            if text:
+                texts[scene_id] = text
+
+        if not texts:
+            return {}
+
+        audio_dir = self.output_dir / 'audio'
+        audio_dir.mkdir(parents=True, exist_ok=True)
+        # 扩展名跟随配置的音频格式，避免把 wav/opus 字节写进 .mp3
+        audio_ext = (self._tts_audio_format() or 'mp3').lstrip('.')
+
+        try:
+            service = create_tts_service()
+        except TTSError as exc:
+            self.logger.warning(
+                f"Skipping narration audio: TTS is not usable with the current "
+                f"settings: {exc}"
+            )
+            return {}
+        except Exception as exc:  # noqa: BLE001 - optional feature, never fatal
+            self.logger.warning(f"Skipping narration audio: {exc}")
+            return {}
+
+        try:
+            max_concurrent = max(1, int(self.config.get('tts_max_concurrent', 3)))
+        except (TypeError, ValueError):
+            max_concurrent = 3
+        semaphore = asyncio.Semaphore(max_concurrent)
+        audio_paths: Dict[str, str] = {}
+
+        async def synthesize(scene_id: str, text: str) -> None:
+            async with semaphore:
+                try:
+                    path = await service.text_to_speech(
+                        text, audio_dir / f"{scene_id}.{audio_ext}"
+                    )
+                    audio_paths[scene_id] = str(path)
+                except Exception as exc:  # noqa: BLE001 - never break composition
+                    self.logger.warning(
+                        f"Narration TTS failed for scene {scene_id}: {exc}"
+                    )
+
+        try:
+            await asyncio.gather(
+                *(synthesize(scene_id, text) for scene_id, text in texts.items())
+            )
+        finally:
+            await service.close()
+
+        self.logger.info(
+            f"Narration audio ready | scenes={len(audio_paths)}/{len(texts)}"
+        )
+        return audio_paths
+
+    @staticmethod
+    def _scene_start_offsets(
+        video_results: List[Dict[str, Any]],
+        clips: List[VideoFileClip]
+    ) -> Dict[str, float]:
+        """拼接后每个场景在时间轴上的起点（按真实片段时长累加）
+
+        ``clips`` 与 ``video_results`` 顺序严格一致（由 ``_load_video_clips``
+        保证），这里不再重新排序：两处排序键一旦不同，配音就会铺到错误位置。
+        """
+        starts: Dict[str, float] = {}
+        offset = 0.0
+        for result, clip in zip(video_results, clips):
+            starts[str(result.get('scene_id'))] = offset
+            offset += float(getattr(clip, 'duration', 0.0) or 0.0)
+        return starts
+
+    def _add_narration_audio(
+        self,
+        video_clip: VideoFileClip,
+        scene_starts: Dict[str, float],
+        narration_audio: Dict[str, str],
+        closeables: Optional[List[Any]] = None
+    ) -> VideoFileClip:
+        """把每个场景的配音铺到该场景在拼接后时间轴上的起点"""
+        layers: List[Any] = []
+        replaced = False
+
+        try:
+            for scene_id, audio_path in narration_audio.items():
+                offset = scene_starts.get(scene_id)
+                if offset is None:
+                    continue
+                try:
+                    voice = AudioFileClip(audio_path)
+                    if closeables is not None:
+                        closeables.append(voice)
+                    # 配音超出该场景画面时裁掉多余部分
+                    next_start = min(
+                        (value for value in scene_starts.values() if value > offset),
+                        default=None,
+                    )
+                    if next_start is not None and voice.duration > next_start - offset:
+                        voice = voice.subclipped(0, next_start - offset)
+                        if closeables is not None:
+                            closeables.append(voice)
+                    voice = voice.with_start(offset)
+                    layers.append(voice)
+                except Exception as exc:  # noqa: BLE001 - skip bad audio
+                    self.logger.warning(
+                        f"Skipping narration audio for scene {scene_id}: {exc}"
+                    )
+
+            if not layers:
+                return video_clip
+
+            mixed_inputs = ([video_clip.audio] if video_clip.audio else []) + layers
+            mixed = CompositeAudioClip(mixed_inputs)
+            if closeables is not None:
+                closeables.append(mixed)
+
+            replaced = True
+            return video_clip.with_audio(mixed)
+
+        finally:
+            if not replaced:
+                for layer in layers:
+                    try:
+                        layer.close()
+                    except Exception:  # pragma: no cover - best effort
+                        pass
 
     def _add_background_music(
         self,

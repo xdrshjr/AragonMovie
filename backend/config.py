@@ -53,6 +53,8 @@ class BackendSettings(BaseSettings):
     ali_video_r2v_model: str = "happyhorse-1.1-r2v"
     ali_video_default_size: str = "1280x720"
     ali_video_default_duration: int = 5
+    # 视频水印（true 时成品带 refiner_watermark 标记；默认关闭）
+    ali_video_watermark: bool = False
     
     # Doubao
     doubao_api_key: str = ""
@@ -128,6 +130,19 @@ class BackendSettings(BaseSettings):
     tts_default_voice: str = "Cherry"
     tts_default_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
     tts_default_speed: float = 1.0
+    # auto | openai_compatible | dashscope_native
+    #
+    # 注意：Ali Token Plan 网关虽然列出 qwen-audio-3.0-tts-plus，但**没有**
+    # 一次性 HTTP 合成接口（/audio/speech 返回 400 InvalidParameter "url error"，
+    # 只有 realtime 模型可用且需走 WebSocket）。provider=auto 时这类主机会自动
+    # 改走下面的 DashScope 原生接口，而不是静默失败。
+    tts_provider: Literal["auto", "openai_compatible", "dashscope_native"] = "auto"
+    # DashScope 原生语音合成（qwen-tts / cosyvoice-v2），需要 DashScope Key；
+    # 留空时回退到 tts_api_key
+    tts_native_base_url: str = "https://dashscope.aliyuncs.com"
+    tts_native_api_key: str = ""
+    tts_native_model: str = "qwen-tts"
+    tts_native_voice: str = "Cherry"
 
     # ==================== Agent Assist Configuration ====================
     # Agent-assisted setup powered by AragonAgent (aragon exec subprocess)

@@ -103,6 +103,16 @@ cp .env.example .env
 # 必需的API密钥
 NANO_BANANA_API_KEY=your_nano_banana_api_key_here
 
+# 语音合成（TTS）：Ali Token Plan 网关**没有**可用的 HTTP 合成接口，
+# 因此 TTS_PROVIDER=auto 时这类主机会改走 DashScope 原生合成；
+# 走原生需要单独的 DashScope Key（留空则复用 TTS_API_KEY，登录 dashscope 会失败）
+TTS_PROVIDER=auto
+# TTS_NATIVE_API_KEY=sk-your_dashscope_key
+# TTS_NATIVE_MODEL=qwen-tts
+
+# 视频水印开关（默认关闭；网关默认给成品加 refiner_watermark 标记）
+ALI_VIDEO_WATERMARK=false
+
 # 图片服务选择（doubao / nano_banana / midjourney / ali_token_plan）
 # 前端 Step2/Step3 的「Auto Generate」会读取这里生效的服务；也可在设置中心修改
 IMAGE_SERVICE_TYPE=ali_token_plan

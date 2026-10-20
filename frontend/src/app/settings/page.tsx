@@ -53,6 +53,8 @@ const ALI_CODING_PLAN_PRESET = {
   },
   voice: {
     enabled: true,
+    // 该网关没有一次性 HTTP 合成接口，auto 会把请求路由到 DashScope 原生接口
+    provider: 'auto',
     base_url: ALI_TOKEN_PLAN_URL,
     model: 'qwen-audio-3.0-tts-plus',
     default_voice: 'Cherry',
@@ -98,8 +100,11 @@ export default function SettingsPage() {
       for (const [k, v] of Object.entries(obj)) {
         if (v && typeof v === 'object' && !Array.isArray(v)) {
           out[k] = stripKeys(v as Record<string, unknown>);
-        } else if (k === 'api_key') {
-          out[k] = undefined; // write-only: untouched until the user types
+        } else if (k === 'api_key' || k.endsWith('_api_key')) {
+          // write-only: untouched until the user types. Covers api_key AND
+          // nested keys such as voice.native_api_key, which the GET response
+          // returns masked - sending that mask back would overwrite the key.
+          out[k] = undefined;
         } else {
           out[k] = v;
         }
@@ -174,8 +179,8 @@ export default function SettingsPage() {
     for (const [k, v] of Object.entries(overlay)) {
       if (v && typeof v === 'object' && !Array.isArray(v)) {
         out[k] = mergeDraft((out[k] as Draft) ?? {}, v as Record<string, unknown>);
-      } else if (k !== 'api_key') {
-        // api_key is write-only: keep whatever the user already typed/stored
+      } else if (k !== 'api_key' && !k.endsWith('_api_key')) {
+        // *_api_key is write-only: keep whatever the user already typed/stored
         out[k] = v;
       }
     }
@@ -432,8 +437,18 @@ export default function SettingsPage() {
             <TabsContent value="voice">
               <ProviderCard
                 title="语音合成 (TTS)"
-                subtitle="OpenAI 兼容 /audio/speech 接口（OpenAI / 硅基流动 / 各类网关均可；注：Ali Token Plan 网关的 qwen-audio-3.0-tts-plus 暂未开放 HTTP 合成接口，如遇失败请改用其他 TTS 网关）"
+                subtitle="Ali Token Plan 网关虽然列出 qwen-audio-3.0-tts-plus，但没有可用的 HTTP 合成接口（/audio/speech 返回 InvalidParameter）。请在下表选择通道：改用下方 DashScope 原生鉴权，或换别的 OpenAI 兼容 TTS 网关。"
                 fields={[
+                  {
+                    key: 'provider',
+                    label: 'TTS 通道',
+                    type: 'select',
+                    options: [
+                      { value: 'auto', label: '自动（DashScope 主机/Token Plan 走原生）' },
+                      { value: 'openai_compatible', label: 'OpenAI 兼容 /audio/speech' },
+                      { value: 'dashscope_native', label: 'DashScope 原生合成' },
+                    ],
+                  },
                   { key: 'base_url', label: 'Base URL', placeholder: 'https://api.openai.com/v1' },
                   { key: 'api_key', label: 'API Key', secret: true },
                   { key: 'model', label: '模型', placeholder: 'tts-1 / tts-1-hd' },
@@ -450,6 +465,7 @@ export default function SettingsPage() {
                   { key: 'default_speed', label: '语速 (0.25-4.0)', type: 'number' },
                 ]}
                 values={{
+                  provider: getField('voice', 'provider'),
                   base_url: getField('voice', 'base_url'),
                   api_key: getField('voice', 'api_key'),
                   model: getField('voice', 'model'),
@@ -461,6 +477,25 @@ export default function SettingsPage() {
                 onChange={(k, v) => setField('voice', k, v)}
                 testing={testingCat === 'voice'}
                 testResult={resultFor('voice', 'tts')}
+              />
+
+              <ProviderCard
+                title="DashScope 原生语音合成"
+                subtitle="TTS_PROVIDER=dashscope_native 时使用：POST {base}/api/v1/services/aigc/multimodal-generation/generation（模型 qwen-tts / cosyvoice-v2）。Token Plan 网关没有该通道，需要单独的 DashScope Key。"
+                fields={[
+                  { key: 'native_base_url', label: 'Base URL', placeholder: 'https://dashscope.aliyuncs.com' },
+                  { key: 'native_api_key', label: 'API Key', secret: true },
+                  { key: 'native_model', label: '模型', placeholder: 'qwen-tts / cosyvoice-v2' },
+                  { key: 'native_voice', label: '音色', placeholder: 'Cherry / longxiaochun_v2' },
+                ]}
+                values={{
+                  native_base_url: getField('voice', 'native_base_url'),
+                  native_api_key: getField('voice', 'native_api_key'),
+                  native_model: getField('voice', 'native_model'),
+                  native_voice: getField('voice', 'native_voice'),
+                }}
+                maskedKey={secretPlaceholder(settings.voice.native_api_key)}
+                onChange={(k, v) => setField('voice', k, v)}
               />
               <Card className="mb-4">
                 <ToggleRow
@@ -558,6 +593,16 @@ export default function SettingsPage() {
                   { key: 'r2v_model', label: '参考生视频模型 (r2v)', placeholder: 'happyhorse-1.1-r2v' },
                   { key: 'default_size', label: '默认分辨率', placeholder: '1280x720' },
                   { key: 'default_duration', label: '默认时长（秒）', type: 'number' },
+                  {
+                    key: 'watermark',
+                    label: '成品水印 (parameters.watermark)',
+                    type: 'select',
+                    options: [
+                      { value: 'false', label: '关闭（无水印，默认）' },
+                      { value: 'true', label: '开启（带 refiner_watermark 标记）' },
+                    ],
+                    hint: '以 parameters.watermark 提交给网关；关闭后成品不再带 refiner_watermark 变体',
+                  },
                 ]}
                 values={{
                   base_url: getField('video', 'ali_token_plan.base_url'),
@@ -568,9 +613,19 @@ export default function SettingsPage() {
                   r2v_model: getField('video', 'ali_token_plan.r2v_model'),
                   default_size: getField('video', 'ali_token_plan.default_size'),
                   default_duration: getField('video', 'ali_token_plan.default_duration'),
+                  watermark: String(
+                    getField('video', 'ali_token_plan.watermark') ?? false
+                  ),
                 }}
                 maskedKey={secretPlaceholder(settings.video.ali_token_plan?.api_key)}
-                onChange={(k, v) => setField('video', `ali_token_plan.${k}`, v)}
+                onChange={(k, v) =>
+                  setField(
+                    'video',
+                    `ali_token_plan.${k}`,
+                    // <Select> only yields strings; the backend expects a boolean
+                    k === 'watermark' ? v === 'true' : v
+                  )
+                }
                 testing={testingCat === 'video'}
                 testResult={resultFor('video', 'ali_token_plan')}
               />

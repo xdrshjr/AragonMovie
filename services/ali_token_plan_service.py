@@ -260,7 +260,8 @@ class AliTokenPlanVideoService:
         endpoint: Optional[str] = None,
         model: Optional[str] = None,
         default_size: Optional[str] = None,
-        default_duration: Optional[int] = None
+        default_duration: Optional[int] = None,
+        watermark: Optional[bool] = None
     ):
         """
         初始化服务（未显式传入的参数取 settings 中 ali_* 配置）
@@ -272,6 +273,8 @@ class AliTokenPlanVideoService:
             model: 视频模型（默认 happyhorse-1.1-i2v 图生视频）
             default_size: 默认分辨率（如 1280x720，供上层展示/日志）
             default_duration: 默认时长（秒）
+            watermark: 是否请求带水印版本（默认取 settings.ali_video_watermark，
+                网关默认会给成品加 ``refiner_watermark`` 标记，因此默认 False）
         """
         self.api_key = api_key or settings.ali_token_plan_api_key
         configured_base = base_url or settings.ali_token_plan_base_url
@@ -281,6 +284,11 @@ class AliTokenPlanVideoService:
         self.default_size = default_size or settings.ali_video_default_size
         self.default_duration = (
             default_duration or settings.ali_video_default_duration
+        )
+        self.watermark = (
+            watermark
+            if watermark is not None
+            else bool(getattr(settings, "ali_video_watermark", False))
         )
         # 备选模型（文生视频/参考生视频），供上层按需切换
         self.t2v_model = settings.ali_video_t2v_model
@@ -300,7 +308,7 @@ class AliTokenPlanVideoService:
         self.logger.info(
             f"AliTokenPlanVideoService initialized | model={self.model} | "
             f"base_url={self.base_url} | endpoint={self.endpoint} | "
-            f"default_duration={self.default_duration}s"
+            f"default_duration={self.default_duration}s | watermark={self.watermark}"
         )
 
     async def close(self):
@@ -344,11 +352,14 @@ class AliTokenPlanVideoService:
 
         seconds = int(round(duration)) if duration else self.default_duration
         model, media = self._resolve_model_and_media(image_path)
-        payload = self._build_payload(model, prompt, media, seconds)
+        watermark = kwargs.get("watermark")
+        payload = self._build_payload(model, prompt, media, seconds, watermark)
 
         self.logger.info(
             f"Submitting Ali video task | model={model} | duration={seconds}s | "
-            f"media={'first_frame' if media else 'none'} | prompt: {prompt[:50]}..."
+            f"media={'first_frame' if media else 'none'} | "
+            f"watermark={payload['parameters']['watermark']} | "
+            f"prompt: {prompt[:50]}..."
         )
         task_id = await self._submit_task(payload)
         output = await self._wait_for_completion(task_id)
@@ -371,14 +382,24 @@ class AliTokenPlanVideoService:
         media = [{"type": "first_frame", "url": image_to_data_uri(images[0])}]
         return self.model, media
 
-    def _build_payload(self, model, prompt, media, seconds) -> Dict[str, Any]:
+    def _build_payload(self, model, prompt, media, seconds,
+                       watermark: Optional[bool] = None) -> Dict[str, Any]:
+        """构造 video-synthesis 请求体。
+
+        ``parameters.watermark`` 是本网关控制成品水印的唯一开关：不传时返回的
+        CDN 文件名带 ``refiner_watermark`` 标记（即默认带水印）。
+        """
         input_body: Dict[str, Any] = {"prompt": prompt}
         if media:
             input_body["media"] = media
+
+        params: Dict[str, Any] = {"duration": seconds}
+        params["watermark"] = self.watermark if watermark is None else bool(watermark)
+
         return {
             "model": model,
             "input": input_body,
-            "parameters": {"duration": seconds},
+            "parameters": params,
         }
 
     async def _submit_task(self, payload: Dict[str, Any]) -> str:

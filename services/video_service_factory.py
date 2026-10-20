@@ -297,6 +297,10 @@ class VideoServiceFactory:
             model=config_override.get("model"),
             default_size=config_override.get("default_size"),
             default_duration=config_override.get("default_duration"),
+            watermark=config_override.get(
+                "watermark",
+                getattr(settings, "ali_video_watermark", False),
+            ),
         )
 
         logger.info(

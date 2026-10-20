@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { apiClient } from '@/lib/api';
 import { VideoType, GenerationMode } from '@/lib/types';
 import { logger } from '@/lib/logger';
+import { Input, Textarea } from '@/components/ui';
 
 const videoTypeOptions: Array<{
   value: VideoType;
@@ -159,34 +160,26 @@ export default function NewProjectPage() {
               Project Details
             </h2>
             <div className="space-y-4">
-              {/* Project Name */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                  Project Name *
-                </label>
-                <input
-                  type="text"
-                  value={projectName}
-                  onChange={(e) => setProjectName(e.target.value)}
-                  placeholder="My Awesome Video"
-                  className="input-apple w-full"
-                  maxLength={200}
-                />
-              </div>
+              {/* Project Name — labelled so getByLabel() / a11y works */}
+              <Input
+                label="Project Name *"
+                type="text"
+                value={projectName}
+                onChange={(e) => setProjectName(e.target.value)}
+                placeholder="My Awesome Video"
+                className="w-full"
+                maxLength={200}
+              />
 
               {/* Project Description */}
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                  Description (Optional)
-                </label>
-                <textarea
-                  value={projectDescription}
-                  onChange={(e) => setProjectDescription(e.target.value)}
-                  placeholder="A brief description of your video project..."
-                  className="input-apple w-full min-h-[100px] resize-y"
-                  maxLength={1000}
-                />
-              </div>
+              <Textarea
+                label="Description (Optional)"
+                value={projectDescription}
+                onChange={(e) => setProjectDescription(e.target.value)}
+                placeholder="A brief description of your video project..."
+                className="min-h-[100px] resize-y"
+                maxLength={1000}
+              />
             </div>
           </section>
 

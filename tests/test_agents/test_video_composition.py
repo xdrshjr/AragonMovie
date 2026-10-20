@@ -464,7 +464,8 @@ class TestVideoComposerNonBlocking:
             output_filename,
             bgm_path,
             add_subtitles,
-            report_progress=None
+            report_progress=None,
+            narration_audio=None,
         ):
             # Stands in for the multi-minute moviepy / ffmpeg composition
             time.sleep(0.4)
@@ -521,7 +522,8 @@ class TestVideoComposerNonBlocking:
             output_filename,
             bgm_path,
             add_subtitles,
-            report_progress=None
+            report_progress=None,
+            narration_audio=None,
         ):
             if report_progress:
                 report_progress(50.0, "halfway")
@@ -540,6 +542,111 @@ class TestVideoComposerNonBlocking:
 
         assert observed, "compose progress callback never reached the event loop"
         assert observed[0][0] == 50.0
+
+
+class TestNarrationAudio:
+    """BUG 6: dialogue/narration must be turned into an audio track.
+
+    The Token Plan gateway has no usable TTS route and the pipeline never called
+    TTS at all, so dramas came out silent.
+    """
+
+    def test_speech_text_combines_dialogues_and_narrations(self):
+        result = {
+            "dialogues": [{"content": "你来了。"}, {"content": "坐吧。"}],
+            "narrations": [{"content": "夜色渐深。"}],
+        }
+        text = VideoComposerAgent._scene_speech_text(result)
+        assert text == "你来了。 坐吧。 夜色渐深。"
+
+    def test_speech_text_is_empty_without_lines(self):
+        assert VideoComposerAgent._scene_speech_text({"dialogues": []}) == ""
+        assert VideoComposerAgent._scene_speech_text({}) == ""
+
+    def test_scene_start_offsets_follow_real_clip_durations(self):
+        class _Clip:
+            def __init__(self, duration):
+                self.duration = duration
+
+        # Contract: video_results and clips are in the SAME (already sorted)
+        # order - offsets use the real clip durations, not requested ones.
+        video_results = [
+            {"scene_id": "scene_001", "duration": 10},
+            {"scene_id": "scene_002", "duration": 10},
+            {"scene_id": "scene_003", "duration": 10},
+        ]
+        clips = [_Clip(4.0), _Clip(6.5), _Clip(3.0)]
+
+        starts = VideoComposerAgent._scene_start_offsets(video_results, clips)
+
+        assert starts == {
+            "scene_001": 0.0,
+            "scene_002": 4.0,
+            "scene_003": 10.5,
+        }
+
+    @pytest.mark.asyncio
+    async def test_no_tts_work_when_disabled(self, tmp_path):
+        composer = VideoComposerAgent(config={"enable_tts": False}, output_dir=tmp_path)
+        results = [
+            {"scene_id": "scene_001", "dialogues": [{"content": "你好"}]},
+        ]
+
+        with patch("agents.video_composer_agent.create_tts_service") as factory:
+            audio = await composer._synthesize_narration_audio(results)
+
+        assert audio == {}
+        factory.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_unusable_tts_does_not_break_composition(self, tmp_path):
+        from services.tts_service import TTSError
+
+        composer = VideoComposerAgent(config={"enable_tts": True}, output_dir=tmp_path)
+        results = [
+            {"scene_id": "scene_001", "dialogues": [{"content": "你好"}]},
+        ]
+
+        with patch(
+            "agents.video_composer_agent.create_tts_service",
+            side_effect=TTSError("gateway has no speech route", retryable=False),
+        ):
+            audio = await composer._synthesize_narration_audio(results)
+
+        assert audio == {}
+
+    @pytest.mark.asyncio
+    async def test_audio_files_are_written_per_scene(self, tmp_path):
+        composer = VideoComposerAgent(config={"enable_tts": True}, output_dir=tmp_path)
+
+        class _FakeService:
+            def __init__(self):
+                self.calls = []
+
+            async def text_to_speech(self, text, output_path):
+                self.calls.append((text, str(output_path)))
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                output_path.write_bytes(b"audio")
+                return output_path
+
+            async def close(self):
+                return None
+
+        service = _FakeService()
+        results = [
+            {"scene_id": "scene_001", "dialogues": [{"content": "第一句"}]},
+            {"scene_id": "scene_002", "narrations": [{"content": "旁白"}]},
+        ]
+
+        with patch(
+            "agents.video_composer_agent.create_tts_service", return_value=service
+        ):
+            audio = await composer._synthesize_narration_audio(results)
+
+        assert set(audio) == {"scene_001", "scene_002"}
+        assert len(service.calls) == 2
+        for path in audio.values():
+            assert Path(path).exists()
 
 
 # Run tests

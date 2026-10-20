@@ -365,6 +365,10 @@ Expected script format (see `examples/sample_scripts/programmer_day.txt`):
 - **Nano Banana Pro**: Synchronous polling for image generation completion
 - **Veo3**: Async task submission + polling for video generation status (default service)
 - **Sora2**: Async task submission + polling for video generation status (alternative service, OpenAI format)
+- **Ali video watermark**: `AliTokenPlanVideoService._build_payload()` always
+  sends `parameters.watermark` (`ALI_VIDEO_WATERMARK` / settings center ->
+  `video.ali_token_plan.watermark`). Without that key the gateway hands back the
+  `..._refiner_watermark.mp4` variant, so the default is `false`
 - All services implement retry logic for transient failures
 
 ### Testing Strategy
@@ -452,9 +456,31 @@ wrappers are reset (`backend/core/service_wrapper.py::reset_runtime_services`).
   host root. TTS is NOT yet usable on this gateway (HTTP `/audio/speech`
   rejected with "url error"; WS inference connects but the engine fails with
   `[cosyvoice:] Engine error [411]`) - voice is optional for the pipeline;
-  point voice settings at another OpenAI-compatible gateway if needed. Image
-  and video share ONE `ali_token_plan_api_key`; setting/clearing it in either
-  category mirrors to the other (`settings_store._mirror_requested_ali_key`).
+  point voice settings at another OpenAI-compatible gateway if needed.
+  RE-VERIFIED 2026-10: the catalogue lists `qwen-audio-3.0-tts-plus` but there
+  is still **no one-shot HTTP synthesis route** - `/audio/speech` answers
+  `400 InvalidParameter "url error"` on both the compatible and the native
+  multimodal path, and `qwen-audio-3.0-realtime-plus` returns
+  `200 {"status_name":"Success"}` with no audio (WebSocket only). Therefore
+  `services/tts_service.py` resolves a transport explicitly
+  (`TTS_PROVIDER=auto|openai_compatible|dashscope_native`) and
+  `reject_broken_speech_gateway()` fails fast - instead of letting the pipeline
+  render a silent video - telling the user to set `TTS_NATIVE_API_KEY` with
+  `dashscope_native` or to point `TTS_BASE_URL` at another gateway.
+  Key rule: `TTS_API_KEY` is reused as the native key ONLY when
+  `TTS_BASE_URL` itself is `dashscope.aliyuncs.com`; otherwise
+  `TTS_NATIVE_API_KEY` is required (a Token Plan key must never be sent to
+  DashScope). Transport/endpoint resolution lives in ONE place
+  (`resolve_tts_transport`, `native_endpoint_for`) and is shared by the runtime
+  client and the settings-center probe, so they cannot drift; cosyvoice probes
+  `text2speech/synthesis`, qwen-tts probes `multimodal-generation`.
+  `VideoComposerAgent._synthesize_narration_audio()` then voices
+  dialogues/narrations per scene (format/ext taken from `TTS_DEFAULT_FORMAT` and
+  corrected by `sniff_audio_format` when the native route returns another
+  container) and `_add_narration_audio()` lays them on the timeline at the real
+  clip offsets (gated by `ENABLE_TTS`, concurrency `tts_max_concurrent`). Image and video
+  share ONE `ali_token_plan_api_key`; setting/clearing it in either category
+  mirrors to the other (`settings_store._mirror_requested_ali_key`).
   The Settings UI has a one-click "Use Ali Coding Plan" preset button. Judge
   LLM auto-detects Ark `/responses` vs OpenAI `chat/completions` by api_url.
 - `backend/api/v1/settings.py` - GET/PUT `/api/v1/settings`, POST `.../test/{category}`
@@ -536,6 +562,19 @@ wrappers are reset (`backend/core/service_wrapper.py::reset_runtime_services`).
 - App Router (Next.js 14+) with TypeScript
 - Dynamic routes: `[projectId]` for project-specific pages
 - Server components for static content, client components for interactivity
+
+**Accessibility / automation**:
+- `components/ui/Input.tsx` and `Textarea.tsx` wire `htmlFor`/`id` plus
+  `aria-describedby` (+ `aria-invalid`, `role="alert"` on errors), so clicking
+  a label focuses the control and Playwright's `get_by_label()` works. Prefer
+  label locators over placeholder locators in E2E tests
+  (`tests/e2e/test_ui_full_workflow.py` already does)
+- `components/ui/Button.tsx` takes `loadingText` (e.g. `"Generating..."`)
+  instead of silently replacing children with `"Loading..."`, and keeps the
+  button width stable (`keepWidthOnLoading`, default true)
+- Progress logs must use the stage computed for the current poll
+  (`resolveStage()` in `Step4VideoProgress.tsx`); reading `currentStage` inside
+  the polling callback logs the stale closure value ("Initializing")
 
 **API Calls**:
 - Centralized in `lib/api.ts`

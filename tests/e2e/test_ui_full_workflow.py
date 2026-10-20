@@ -132,8 +132,10 @@ def _open_new_project(page: Page, frontend_url: str, recorder: Recorder) -> None
 def _create_project(page: Page, recorder: Recorder) -> None:
     """Fill the wizard and land on the workflow page (Step 0)."""
     started = time.time()
-    page.get_by_placeholder("My Awesome Video").fill(PROJECT_NAME)
-    page.get_by_placeholder("A brief description of your video project...").fill(
+    # Labels are wired to the controls (htmlFor/id), so label locators work and
+    # no longer break when placeholder copy changes.
+    page.get_by_label("Project Name").fill(PROJECT_NAME)
+    page.get_by_label("Description (Optional)").fill(
         "UI 自动化测试：阿里云 Token Plan 凭证驱动的 1 分钟内短剧"
     )
     page.get_by_role("button").filter(has_text="Short Drama").first.click()

@@ -51,13 +51,28 @@ class TextSettings(BaseModel):
 
 
 class VoiceSettings(BaseModel):
+    """TTS configuration.
+
+    ``provider`` picks the transport:
+
+    - ``openai_compatible``: ``POST {base_url}/audio/speech``
+    - ``dashscope_native``: DashScope native synthesis (qwen-tts / cosyvoice-v2)
+    - ``auto``: DashScope host -> native, Token Plan gateway -> native
+      (its /audio/speech route does not exist), everything else -> compatible
+    """
     enabled: bool = Field(False, description="Enable the TTS service")
+    provider: Literal["auto", "openai_compatible", "dashscope_native"] = "auto"
     api_key: Optional[str] = Field(None, description="API key (write-only)")
     base_url: str = Field("https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
     model: str = Field("qwen-audio-3.0-tts-plus")
     default_voice: str = Field("Cherry")
     default_format: Literal["mp3", "opus", "aac", "flac", "wav", "pcm"] = "mp3"
     default_speed: float = Field(1.0, ge=0.25, le=4.0)
+    # DashScope native synthesis transport
+    native_base_url: str = Field("https://dashscope.aliyuncs.com")
+    native_api_key: Optional[str] = Field(None, description="DashScope key (write-only)")
+    native_model: str = Field("qwen-tts")
+    native_voice: str = Field("Cherry")
 
 
 # ==================== Video ====================
@@ -97,6 +112,10 @@ class AliTokenPlanVideoConfig(BaseModel):
     r2v_model: str = Field("happyhorse-1.1-r2v")
     default_size: str = Field("1280x720")
     default_duration: int = Field(5, ge=1, le=60)
+    watermark: bool = Field(
+        False,
+        description="Request the watermarked variant (refiner_watermark) from the gateway",
+    )
 
 
 class VideoSettings(BaseModel):
