@@ -18,6 +18,8 @@ Artifacts land in build/desktop/e2e/<timestamp>/.
 """
 from __future__ import annotations
 
+import base64
+import io
 import json
 import os
 import re
@@ -29,6 +31,7 @@ from datetime import datetime
 from pathlib import Path
 
 import httpx
+from PIL import Image, ImageDraw
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARTIFACT_ROOT = REPO_ROOT / "build" / "desktop" / "e2e"
@@ -98,6 +101,63 @@ scenes:
 """
 
 
+def make_scene_image(kind: str) -> str:
+    """Flat-illustration 1280x720 still (data URI) for one scene.
+
+    Deliberately stylised: Ark rejects photo-like stills that its safety
+    filter reads as a real person.
+    """
+    width, height = 1280, 720
+    img = Image.new("RGB", (width, height), (10, 12, 20))
+    draw = ImageDraw.Draw(img)
+    if kind == "street":
+        # night sky gradient
+        for y in range(height):
+            t = y / height
+            draw.line([(0, y), (width, y)], fill=(int(12 + 26 * t), int(16 + 30 * t), int(34 + 58 * t)))
+        # skyline blocks
+        for x in range(0, width, 96):
+            h = 120 + (x * 13) % 220
+            draw.rectangle([x + 8, height - 190 - h, x + 84, height - 170], fill=(18, 22, 34))
+            for wy in range(height - 180 - h, height - 186, 30):
+                draw.rectangle([x + 22, wy, x + 34, wy + 14], fill=(250, 214, 150))
+        # wet road
+        draw.rectangle([0, height - 170, width, height], fill=(14, 16, 24))
+        for x in range(40, width, 150):
+            draw.ellipse([x, height - 120, x + 96, height - 84], fill=(30, 40, 70))
+        # lamp post + light cone
+        draw.rectangle([188, 120, 200, height - 170], fill=(60, 64, 78))
+        draw.ellipse([150, 96, 238, 148], fill=(255, 228, 168))
+        draw.polygon([(150, 140), (238, 140), (330, height - 170), (70, height - 170)], fill=(60, 52, 34))
+        # umbrella silhouette (no face, pure graphic)
+        draw.pieslice([470, 330, 810, 560], start=180, end=360, fill=(226, 88, 106))
+        draw.rectangle([636, 440, 644, 610], fill=(40, 42, 52))
+        # rain streaks
+        for x in range(30, width, 46):
+            draw.line([(x, 30 + (x % 60)), (x - 8, 120 + (x % 60))], fill=(120, 150, 190), width=2)
+    else:
+        # cafe front: warm window, awning, wet pavement
+        draw.rectangle([0, 0, width, height], fill=(16, 18, 26))
+        draw.rectangle([120, 150, 1160, 560], fill=(28, 26, 30))
+        draw.rectangle([170, 200, 1110, 520], fill=(255, 206, 128))
+        draw.rectangle([170, 200, 1110, 250], fill=(214, 150, 84))
+        for x in range(230, 1100, 190):
+            draw.rectangle([x, 250, x + 12, 520], fill=(46, 40, 36))
+        # awning stripes
+        for x in range(120, 1160, 120):
+            draw.polygon([(x, 150), (x + 120, 150), (x + 96, 92), (x + 24, 92)], fill=(198, 74, 88) if (x // 120) % 2 == 0 else (238, 232, 224))
+        # pavement + reflection
+        draw.rectangle([0, 560, width, height], fill=(20, 22, 30))
+        draw.ellipse([220, 600, 1060, 700], fill=(58, 46, 34))
+        # raindrops
+        for x in range(60, width, 52):
+            draw.line([(x, 20 + (x % 50)), (x - 6, 96 + (x % 50))], fill=(110, 130, 170), width=2)
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    return f"data:image/png;base64,{encoded}"
+
+
 def free_port() -> int:
     with socket.socket() as sock:
         sock.bind(("127.0.0.1", 0))
@@ -155,7 +215,16 @@ def main() -> int:
     api = f"{base}/api/v1"
     backend_log = artifacts / "backend.log"
 
-    env = {**os.environ, "PYTHONUNBUFFERED": "1", "PYTHONUTF8": "1"}
+    env = {
+        **os.environ,
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONUTF8": "1",
+        # Ark rejects photorealistic frames cut from a generated clip with
+        # InputImageSensitiveContentDetected.PrivacyInformation ("real person"),
+        # so scene-to-scene reference frames are disabled for this run.
+        "ENABLE_SCENE_CONTINUITY": "false",
+        "ENABLE_SMART_CONTINUITY_JUDGE": "false",
+    }
     for name in ("FAST_LLM_API_KEY", "JUDGE_LLM_API_KEY", "ALI_TOKEN_PLAN_API_KEY", "TTS_VOLC_API_KEY", "DOUBAO_VIDEO_API_KEY"):
         env.pop(name, None)
 
@@ -258,6 +327,10 @@ def main() -> int:
             json={
                 "script": SCRIPT_YAML,
                 "video_type": "short_drama",
+                "scene_images": {
+                    "scene_001": make_scene_image("street"),
+                    "scene_002": make_scene_image("cafe"),
+                },
                 "config": {
                     "video_fps": 24,
                     "video_duration": 5.0,
@@ -266,7 +339,7 @@ def main() -> int:
                     "add_transitions": False,
                     "transition_duration": 0.0,
                     "add_subtitles": True,
-                    "enable_character_references": True,
+                    "enable_character_references": False,
                     "max_concurrent_requests": 2,
                 },
             },
@@ -345,7 +418,23 @@ def main() -> int:
 
         (artifacts / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
 
+        # Narration proof: the composer writes one audio file per scene into
+        # the temp project before mixing it onto the timeline.
+        project_output = REPO_ROOT / "backend" / "temp_projects" / task_id / "output"
+        audio_dir = project_output / "final" / "audio"
+        if not audio_dir.exists():
+            audio_dir = project_output / "audio"
+        narration_files = sorted(audio_dir.glob("*.mp3")) + sorted(audio_dir.glob("*.wav")) if audio_dir.exists() else []
+        report["narration"] = {
+            "dir": str(audio_dir),
+            "files": [f.name for f in narration_files],
+            "total_bytes": sum(f.stat().st_size for f in narration_files),
+        }
+        print(f"      narration files: {report['narration']['files']}")
+
         problems = []
+        if not narration_files:
+            problems.append("no narration audio was synthesized (TTS did not reach the composer)")
         if not (8.0 <= duration <= 13.0):
             problems.append(f"duration {duration:.2f}s outside the 8-13s window")
         if not audio_stream:

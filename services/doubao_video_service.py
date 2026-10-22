@@ -361,7 +361,18 @@ class DoubaoVideoService:
             (error or {}).get("message") if isinstance(error, dict) else None
         ) or f"Ark API returned {response.status_code}"
         self.logger.error(f"Seedance API failed: {response.status_code} {code} {message}")
-        retryable = response.status_code >= 500 or response.status_code == 429
+
+        # Inputs that look like a real person are rejected by Ark's safety
+        # filter. Retrying the same image is pointless, so fail fast with the
+        # concrete remedies instead of burning 4 attempts.
+        sensitive = "SensitiveContent" in code or "SensitiveContent" in message
+        retryable = (response.status_code >= 500 or response.status_code == 429) and not sensitive
+        if sensitive:
+            message = (
+                f"{message} —— 火山方舟判定输入图片可能包含真人（内容安全策略）。"
+                "可改用插画/电影感风格的场景图，或在设置里关闭「场景连续性参考帧」"
+                "（ENABLE_SCENE_CONTINUITY=false），避免使用上一镜头视频截帧作为输入。"
+            )
         if "ModelNotOpen" in code or "NotFound" in code:
             message = (
                 f"{message} —— 该 Key 未开通模型 {self.model}，请在火山方舟控制台开通 "

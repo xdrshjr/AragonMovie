@@ -591,6 +591,7 @@ class VideoGenerationAgent(BaseAgent):
                 'config': base_video_result['config'],
                 'api_response': base_video_result['api_response'],
                 'dialogues': [d.model_dump() for d in scene.dialogues],
+                'narrations': [n.model_dump() for n in (scene.narrations or [])],
                 'has_subscenes': True,
                 'base_video_path': base_video_path,
                 'sub_scene_videos': [r['video_path'] for r in sub_scene_results],
@@ -723,7 +724,8 @@ class VideoGenerationAgent(BaseAgent):
             'duration': sub_scene.duration,
             'config': video_config,
             'api_response': api_result,
-            'dialogues': [d.model_dump() for d in sub_scene.dialogues]
+            'dialogues': [d.model_dump() for d in sub_scene.dialogues],
+            'narrations': [n.model_dump() for n in (sub_scene.narrations or [])],
         }
     
     async def _load_custom_subscene_image(self, sub_scene: SubScene) -> Optional[str]:
@@ -1001,7 +1003,9 @@ class VideoGenerationAgent(BaseAgent):
             'duration': scene.duration,
             'config': video_config,
             'api_response': api_result,
-            'dialogues': [d.model_dump() for d in scene.dialogues]  # 新增：保留对话数据
+            'dialogues': [d.model_dump() for d in scene.dialogues],  # 保留对话数据
+            # 旁白：VideoComposerAgent 用它合成配音（缺失时成片将没有旁白）
+            'narrations': [n.model_dump() for n in (scene.narrations or [])],
         }
 
     def _map_camera_motion(self, movement: CameraMovement) -> str:
