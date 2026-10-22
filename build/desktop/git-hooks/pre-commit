@@ -1,0 +1,80 @@
+#!/bin/sh
+#
+# AragonMovie credential gate (pre-commit).
+#
+# Blocks a commit whose staged changes contain a credential. The values it
+# compares against come from the developer's own .env / runtime settings file,
+# so a locally configured key can never be committed by accident:
+#
+#   * every api_key/token/secret value currently configured on this machine
+#   * credential-shaped strings (sk-*, AKIA*, AIza*, gh*_, xox*, PRIVATE KEY, JWT)
+#
+# Placeholders (your_…_here, changeme, …) and test fixtures are not blocked.
+#
+# Install:  powershell -NoProfile -ExecutionPolicy Bypass \
+#             -File build\desktop\install-git-hooks.ps1
+# Bypass :  git commit --no-verify      (only for a proven false positive)
+#
+# Full audit (tree + every ref + history):
+#   venv\Scripts\python.exe build\desktop\audit-secrets.py
+
+set -u
+
+repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+checker="$repo_root/build/desktop/precommit-check.py"
+
+if [ ! -f "$checker" ]; then
+    echo "pre-commit: $checker not found, skipping the credential scan" >&2
+    exit 0
+fi
+
+python_bin=""
+for candidate in \
+    "$repo_root/venv/Scripts/python.exe" \
+    "$repo_root/.venv/Scripts/python.exe" \
+    "$repo_root/venv/bin/python" \
+    "$repo_root/.venv/bin/python"
+do
+    if [ -f "$candidate" ]; then
+        python_bin="$candidate"
+        break
+    fi
+done
+
+if [ -z "$python_bin" ]; then
+    for candidate in python3 python py; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            python_bin="$candidate"
+            break
+        fi
+    done
+fi
+
+if [ -z "$python_bin" ]; then
+    echo "pre-commit: no python interpreter found; skipping the credential scan" >&2
+    exit 0
+fi
+
+PYTHONIOENCODING=utf-8 "$python_bin" "$checker"
+status=$?
+
+if [ "$status" -ne 0 ]; then
+    cat <<'EOF'
+
+------------------------------------------------------------------
+COMMIT BLOCKED: a credential appears in the staged changes.
+
+Remove it from the file and stage the fix:
+    git add <file>
+    git commit
+
+If this is a false positive you have verified by hand:
+    git commit --no-verify
+
+Then rotate the key anyway if it was ever committed.
+------------------------------------------------------------------
+EOF
+    exit 1
+fi
+
+exit 0

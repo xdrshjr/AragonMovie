@@ -1,0 +1,4 @@
+# The pre-commit hook template must stay LF: Git runs it through its bundled
+# sh, and a CRLF shebang line silently breaks it (core.autocrlf=true here would
+# otherwise rewrite it on checkout).
+build/desktop/git-hooks/* text eol=lf

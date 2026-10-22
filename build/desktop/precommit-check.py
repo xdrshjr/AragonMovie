@@ -69,13 +69,24 @@ def main() -> int:
         "sk-*": r"sk-[A-Za-z0-9._-]{24,}",
         "dashboard token": r"(?i)(api[_-]?key|token|secret)\s*[:=]\s*['\"]?[A-Za-z0-9._-]{28,}",
     }
-    placeholder = re.compile(r"your|example|placeholder|here|dummy|xxxx|asdasd|9999", re.IGNORECASE)
+    # Word-boundary aware: a bare "here" inside a random key (…notthere) must NOT
+    # be treated as a placeholder, only real placeholder idioms (…_here, your_…,
+    # <…>, changeme, …).
+    placeholder = re.compile(
+        r"(?i)(your[_-][a-z0-9_]*|_here\b|<[^>\n]{1,40}>|\bplaceholder\b|\bexample\b"
+        r"|\bchangeme\b|\bdummy\b|\basdasd+\b|x{4,}|\b9999\b|\*\*\*\*)"
+    )
+    # An intentional synthetic fixture opts out with an inline marker, the same
+    # way `pragma: allowlist secret` works elsewhere. Only the pattern heuristic
+    # honours it: the comparison against the developer's real values above still
+    # covers every file, so a real key cannot hide behind the marker.
+    allow_marker = re.compile(r"credential-gate:\s*allow", re.IGNORECASE)
     for label, pattern in patterns.items():
         hits = []
         for line in diff.splitlines():
             if not line.startswith("+") or line.startswith("+++"):
                 continue
-            if "audit-secrets.py" in line:
+            if "audit-secrets.py" in line or allow_marker.search(line):
                 continue
             for match in re.finditer(pattern, line):
                 if not placeholder.search(match.group(0)):
