@@ -19,7 +19,7 @@
 IMAGE_GENERATOR=midjourney
 
 # Midjourney API配置（已配置）
-MIDJOURNEY_API_KEY=sk-GLHfjPfuFs85MQOsPhQGfAe3XIBXW8akOfuGqCnxgdLsv96C
+MIDJOURNEY_API_KEY=your_midjourney_api_key_here
 MIDJOURNEY_BASE_URL=https://api.kuai.host
 MIDJOURNEY_BOT_TYPE=MID_JOURNEY
 

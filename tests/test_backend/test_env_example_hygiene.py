@@ -1,9 +1,13 @@
-"""BUG 12 regression: .env.example must not contain credential-shaped values.
+"""BUG 12 regression: example env files must not contain credential-shaped values.
 
-``DOUBAO_API_KEY=0fe6efc8-43fb-49be-a358-bdaasdasd`` and
-``NANO_BANANA_API_KEY=sk-Zb5pnfIb...asdasd`` looked like real keys (tail-masked
-by hand). That invites people to think a working default exists and risks the
-value being reused or committed elsewhere.
+Historically some keys were pasted in and then tail-masked by hand (a real
+prefix followed by "asdasd"). That invites people to think a working default
+exists and risks the value being reused or committed elsewhere, so every
+example file must carry an explicit placeholder instead.
+
+The exact leaked prefixes are NOT reproduced here on purpose: the assertions
+below use short fragments that are enough to catch a reintroduction without
+keeping a usable secret in the test suite.
 """
 
 import re
@@ -13,6 +17,16 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 ENV_EXAMPLE = REPO_ROOT / ".env.example"
+
+# Every example env file in the repo; the root one is the canonical one.
+EXAMPLE_FILES = sorted(
+    {
+        *REPO_ROOT.glob("*.example"),
+        *REPO_ROOT.glob("*.env.example"),
+        *REPO_ROOT.glob("backend/*.example"),
+        *REPO_ROOT.glob("backend/*.env.example"),
+    }
+)
 
 # Every secret-looking key must use an explicit placeholder.
 PLACEHOLDER_HINTS = ("your_", "_here", "YOUR_", "-placeholder", "changeme")
@@ -35,11 +49,16 @@ def values() -> dict:
 
 
 def test_no_hand_masked_credentials(values):
-    """The previously committed fake tails must be gone."""
-    blob = ENV_EXAMPLE.read_text(encoding="utf-8")
-    assert "asdasd" not in blob
-    assert "0fe6efc8-43fb-49be-a358" not in blob
-    assert "Zb5pnfIbQJQzRXjSJ1gR1rXsqVb6yvEG3rBy" not in blob
+    """The previously committed tail-mangled fakes must be gone everywhere."""
+    for example in EXAMPLE_FILES:
+        blob = example.read_text(encoding="utf-8")
+        rel = example.relative_to(REPO_ROOT)
+        assert "asdasd" not in blob, f"hand-masked tail still in {rel}"
+        assert "bdaasdasd" not in blob, f"hand-masked tail still in {rel}"
+        # Short fragments are enough to catch a reintroduction of the real
+        # prefixes without storing a usable key in the test suite.
+        assert "0fe6efc8-43fb-49be" not in blob, f"real Ark key prefix in {rel}"
+        assert "Zb5pnfIbQJQz" not in blob, f"real Nano Banana key prefix in {rel}"
 
 
 def test_secret_keys_use_placeholders(values):
