@@ -192,11 +192,16 @@ def history_pattern_hits() -> list[str]:
         elif line.startswith("+++ b/") or line.startswith("--- a/"):
             path = line[6:]
         elif line[:1] in "+-" and not line.startswith(("+++", "---")):
+            # "+" = the secret was ADDED by this commit (still in the tree
+            # unless a later commit removed it), "-" = it was REMOVED here
+            # (a redaction commit, which of course still carries the value in
+            # its own patch).
+            sign = "added  " if line.startswith("+") else "removed"
             for label, regex in compiled.items():
                 for match in regex.finditer(line):
                     if any(hint in match.group(0) for hint in FIXTURE_HINTS):
                         continue
-                    entry = f"{commit} {path} ({label})"
+                    entry = f"{commit} {sign} {path} ({label})"
                     if entry not in findings:
                         findings.append(entry)
     return findings
