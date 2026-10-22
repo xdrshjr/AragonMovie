@@ -33,6 +33,12 @@
 - 实时进度监控和日志查看
 - 开发服务器: `http://localhost:3000` (前端) + `http://localhost:8000` (后端)
 
+**3. 桌面端**（Electron，免环境安装）
+- 一键安装，用户机器**无需** Python / Node.js / ffmpeg
+- 首次启动引导填写 LLM / 图像 / 视频 / 语音凭证，并逐项真实连接测试；之后启动直接进入工作台
+- 灰黑色系界面，详情见 [docs/DESKTOP.md](docs/DESKTOP.md)
+- 构建：`cd desktop && npm install && npm run build:all && node scripts\\dist.js`
+
 ### 多Agent协作架构
 
 核心视频生成管道由以下Agent组成：

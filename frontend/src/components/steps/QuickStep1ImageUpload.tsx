@@ -141,8 +141,8 @@ export default function QuickStep1ImageUpload({
             border-2 border-dashed rounded-apple-lg p-12 text-center transition-all duration-300
             ${
               isDragging
-                ? 'border-primary bg-blue-50 dark:bg-blue-900/20'
-                : 'border-gray-300 dark:border-gray-600 hover:border-primary'
+                ? 'border-accent bg-accent-soft'
+                : 'border-hairline-strong hover:border-accent-border hover:bg-white/[0.02]'
             }
           `}
           onDragOver={handleDragOver}
@@ -181,8 +181,8 @@ export default function QuickStep1ImageUpload({
 
         {/* Error Message */}
         {error && (
-          <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-apple-md">
-            <p className="text-sm text-red-800 dark:text-red-200">⚠️ {error}</p>
+          <div className="mt-4 p-4 bg-error-soft border border-error-border rounded-apple-md">
+            <p className="text-sm text-error-text">⚠️ {error}</p>
           </div>
         )}
 
@@ -206,24 +206,24 @@ export default function QuickStep1ImageUpload({
               {scenes.map((scene, index) => (
                 <div
                   key={scene.id}
-                  className="relative group bg-background rounded-apple-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-apple-md transition-all duration-300"
+                  className="relative group bg-surface rounded-apple-lg overflow-hidden border border-hairline hover:border-hairline-strong hover:shadow-apple-md transition-all duration-300"
                 >
                   {/* Scene Number Badge */}
-                  <div className="absolute top-2 left-2 z-10 bg-primary text-white text-xs font-bold px-2 py-1 rounded-apple-sm">
+                  <div className="absolute top-2 left-2 z-10 bg-accent text-[#0A0A0B] text-xs font-bold px-2 py-1 rounded-apple-sm">
                     {index + 1}
                   </div>
 
                   {/* Remove Button */}
                   <button
                     onClick={() => handleRemoveScene(scene.id)}
-                    className="absolute top-2 right-2 z-10 bg-red-500 text-white w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center hover:bg-red-600"
+                    className="absolute top-2 right-2 z-10 bg-error text-white w-6 h-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center hover:bg-[#FF7370]"
                     title="删除"
                   >
                     ×
                   </button>
 
                   {/* Image Preview */}
-                  <div className="aspect-video bg-gray-100 dark:bg-gray-800">
+                  <div className="aspect-video bg-background-deep">
                     <img
                       src={scene.imagePreview}
                       alt={scene.id}
@@ -245,8 +245,8 @@ export default function QuickStep1ImageUpload({
             </div>
 
             {/* Info Box */}
-            <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-apple-md">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+            <div className="mt-6 p-4 bg-accent-soft border border-accent-border rounded-apple-md">
+              <p className="text-sm text-accent-text">
                 💡 <strong>提示：</strong>
                 图片将按当前顺序生成视频。下一步可以为每个场景配置时长和提示词。
               </p>

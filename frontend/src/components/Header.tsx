@@ -3,11 +3,11 @@ import Link from 'next/link';
 
 export const Header: React.FC = () => {
   return (
-    <header className="glass-effect border-b border-text-tertiary sticky top-0 z-50">
+    <header className="glass-effect glow-top border-b border-hairline sticky top-0 z-50">
       <div className="px-4 py-3">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-apple-md flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-[#23232B] to-[#0C0C0F] rounded-apple-md ring-1 ring-white/10 flex items-center justify-center shadow-apple-sm">
               <svg
                 className="w-5 h-5 text-white"
                 fill="none"
@@ -23,7 +23,7 @@ export const Header: React.FC = () => {
               </svg>
             </div>
             <div>
-              <h1 className="text-lg font-bold text-text-primary">
+              <h1 className="text-lg font-bold tracking-[-0.02em] text-text-primary">
                 AI Movie Generator
               </h1>
               <p className="text-xs text-text-secondary">

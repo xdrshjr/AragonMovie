@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     doubao_endpoint: str = "/api/v3/images/generations"
     doubao_model: str = "doubao-seedream-4-5-251128"
     doubao_watermark: bool = False  # 是否在生成的图片中添加水印（false: 不添加水印）
+    # 豆包 Seedance 视频生成（火山方舟 Ark 异步任务接口，非 OpenAI 兼容）
+    doubao_video_api_key: str = ""
+    doubao_video_base_url: str = "https://ark.cn-beijing.volces.com/api/v3"
+    doubao_video_endpoint: str = "/contents/generations/tasks"
+    doubao_video_model: str = "doubao-seedance-2-0-260128"      # 图生视频
+    doubao_video_t2v_model: str = "doubao-seedance-2-0-260128"  # 文生视频
+    doubao_video_default_resolution: str = "720p"               # 480p / 720p / 1080p
+    doubao_video_default_ratio: str = "16:9"
+    doubao_video_default_duration: int = 5
+    doubao_video_watermark: bool = False
 
     # Nano Banana Pro配置
     nano_banana_api_key: str = ""
@@ -40,7 +50,7 @@ class Settings(BaseSettings):
     nano_banana_model: str = "dall-e-3"  # 图像生成模型名称
 
     # 视频生成服务选择 (默认使用阿里云 Token Plan happyhorse)
-    video_service_type: Literal["veo3", "sora2", "ali_token_plan"] = "ali_token_plan"
+    video_service_type: Literal["veo3", "sora2", "ali_token_plan", "doubao"] = "ali_token_plan"
 
     # Veo3配置
     veo3_api_key: str = ""
@@ -152,7 +162,7 @@ class Settings(BaseSettings):
     # 一次性 HTTP 合成接口（/audio/speech 返回 400 InvalidParameter "url error"，
     # 只有 realtime 模型可用且需走 WebSocket）。provider=auto 时这类主机会自动
     # 改走下面的 DashScope 原生接口，而不是静默失败。
-    tts_provider: Literal["auto", "openai_compatible", "dashscope_native"] = "auto"
+    tts_provider: Literal["auto", "openai_compatible", "dashscope_native", "volc_tts2"] = "auto"
     # DashScope 原生语音合成（qwen-tts / cosyvoice-v2）。
     # 必须填 DashScope（百炼）Key：Token Plan 的 Key 在 dashscope.aliyuncs.com
     # 上无效，复用它只会拿到 401。留空时不会静默降级，而是记录原因并跳过配音。
@@ -160,6 +170,12 @@ class Settings(BaseSettings):
     tts_native_api_key: str = ""
     tts_native_model: str = "qwen-tts"
     tts_native_voice: str = "Cherry"
+    # 火山引擎语音合成 2.0（v3 双向 WebSocket，seed-tts-2.0 资源）
+    tts_volc_api_key: str = ""
+    tts_volc_resource_id: str = "seed-tts-2.0"
+    tts_volc_voice: str = "zh_female_xiaohe_uranus_bigtts"
+    tts_volc_speed: float = 1.0
+    tts_volc_sample_rate: int = 24000
 
     agent_enabled: bool = False
     agent_provider: Literal["openai", "anthropic", "google"] = "openai"

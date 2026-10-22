@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // `standalone` emits a self-contained server.js + minimal node_modules tree,
+  // which is exactly what the Electron desktop shell ships and runs.
+  output: 'standalone',
   images: {
     domains: [
       'localhost',
@@ -19,6 +22,10 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'localhost',
       },
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+      },
     ],
   },
   // Enable experimental features if needed
@@ -34,4 +41,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

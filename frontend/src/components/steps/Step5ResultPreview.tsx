@@ -41,7 +41,7 @@ export const Step5ResultPreview: React.FC<Step5ResultPreviewProps> = ({
       {/* Success Message */}
       <Card>
         <div className="text-center py-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-apple-green rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-success rounded-full mb-4 shadow-apple-glow">
             <svg
               className="w-10 h-10 text-white"
               fill="currentColor"
@@ -65,7 +65,7 @@ export const Step5ResultPreview: React.FC<Step5ResultPreviewProps> = ({
 
       {/* Video Player */}
       <Card title="Video Preview">
-        <div className="aspect-video bg-black rounded-apple-md overflow-hidden">
+        <div className="aspect-video bg-black rounded-apple-md border border-hairline overflow-hidden">
           <video
             src={videoUrl}
             controls
@@ -122,15 +122,15 @@ export const Step5ResultPreview: React.FC<Step5ResultPreviewProps> = ({
         <h4 className="text-apple-headline text-text-primary mb-2">Next Steps</h4>
         <ul className="space-y-2 text-apple-body text-text-secondary">
           <li className="flex items-start gap-2">
-            <span className="text-apple-blue">•</span>
+            <span className="text-accent">•</span>
             <span>Download your video and use it in your projects</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-apple-blue">•</span>
+            <span className="text-accent">•</span>
             <span>Click "Create Another Video" to start a new generation</span>
           </li>
           <li className="flex items-start gap-2">
-            <span className="text-apple-blue">•</span>
+            <span className="text-accent">•</span>
             <span>Share your creation with others!</span>
           </li>
         </ul>

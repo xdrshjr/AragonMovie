@@ -374,62 +374,62 @@ export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-apple-red rounded-apple-md p-4">
-          <h4 className="text-apple-red font-semibold mb-2">Error</h4>
-          <p className="text-apple-red text-sm mb-3">{error}</p>
+        <div className="bg-error-soft border border-error-border rounded-apple-md p-4">
+          <h4 className="text-error-text font-semibold mb-2">Error</h4>
+          <p className="text-error-text text-sm mb-3">{error}</p>
 
           {/* Error Details */}
           {errorDetails && (
             <div className="mt-3">
               <button
                 onClick={() => setShowErrorDetails(!showErrorDetails)}
-                className="text-apple-red text-sm underline hover:no-underline focus:outline-none"
+                className="text-error-text text-sm underline hover:no-underline focus:outline-none"
               >
                 {showErrorDetails ? '▼ Hide Details' : '▶ Show Details'}
               </button>
 
               {showErrorDetails && (
-                <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
+                <div className="mt-3 p-3 bg-background-deep rounded-apple-sm border border-hairline">
                   <div className="space-y-2 text-sm font-mono">
                     {errorDetails.code && (
                       <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Error Code:</span>{' '}
-                        <span className="text-gray-900 dark:text-gray-100">{errorDetails.code}</span>
+                        <span className="font-semibold text-text-secondary">Error Code:</span>{' '}
+                        <span className="text-text-primary">{errorDetails.code}</span>
                       </div>
                     )}
 
                     {errorDetails.details?.service && (
                       <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Service:</span>{' '}
-                        <span className="text-gray-900 dark:text-gray-100">{errorDetails.details.service}</span>
+                        <span className="font-semibold text-text-secondary">Service:</span>{' '}
+                        <span className="text-text-primary">{errorDetails.details.service}</span>
                       </div>
                     )}
 
                     {errorDetails.details?.stage && (
                       <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Stage:</span>{' '}
-                        <span className="text-gray-900 dark:text-gray-100">{errorDetails.details.stage}</span>
+                        <span className="font-semibold text-text-secondary">Stage:</span>{' '}
+                        <span className="text-text-primary">{errorDetails.details.stage}</span>
                       </div>
                     )}
 
                     {errorDetails.details?.error_type && (
                       <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Error Type:</span>{' '}
-                        <span className="text-gray-900 dark:text-gray-100">{errorDetails.details.error_type}</span>
+                        <span className="font-semibold text-text-secondary">Error Type:</span>{' '}
+                        <span className="text-text-primary">{errorDetails.details.error_type}</span>
                       </div>
                     )}
 
                     {errorDetails.details?.error_code && (
                       <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">API Error Code:</span>{' '}
-                        <span className="text-gray-900 dark:text-gray-100">{errorDetails.details.error_code}</span>
+                        <span className="font-semibold text-text-secondary">API Error Code:</span>{' '}
+                        <span className="text-text-primary">{errorDetails.details.error_code}</span>
                       </div>
                     )}
 
                     {errorDetails.retryable !== undefined && (
                       <div>
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">Retryable:</span>{' '}
-                        <span className={errorDetails.retryable ? 'text-green-600' : 'text-red-600'}>
+                        <span className="font-semibold text-text-secondary">Retryable:</span>{' '}
+                        <span className={errorDetails.retryable ? 'text-success-text' : 'text-error-text'}>
                           {errorDetails.retryable ? 'Yes' : 'No'}
                         </span>
                       </div>
@@ -437,8 +437,8 @@ export const Step4VideoProgress: React.FC<Step4VideoProgressProps> = ({
 
                     {errorDetails.details?.api_response && (
                       <div className="mt-3">
-                        <span className="font-semibold text-gray-700 dark:text-gray-300">API Response:</span>
-                        <pre className="mt-1 p-2 bg-gray-100 dark:bg-gray-900 rounded text-xs overflow-x-auto">
+                        <span className="font-semibold text-text-secondary">API Response:</span>
+                        <pre className="mt-1 p-2 bg-black/40 rounded-apple-sm text-xs overflow-x-auto">
                           {JSON.stringify(errorDetails.details.api_response, null, 2)}
                         </pre>
                       </div>

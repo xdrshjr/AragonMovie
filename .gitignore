@@ -4,7 +4,7 @@ __pycache__/
 *$py.class
 *.so
 .Python
-build/
+build/*
 develop-eggs/
 dist/
 downloads/
@@ -70,3 +70,15 @@ backend/projects/
 backend/temp_projects/
 # UI end-to-end run artifacts (screenshots / reports / generated video)
 tests/e2e/artifacts/
+
+# Python build artifacts (the desktop build tooling in build/desktop is tracked)
+build/*
+!build/desktop/
+build/desktop/*
+!build/desktop/*.ps1
+!build/desktop/*.py
+
+# Electron desktop
+desktop/node_modules/
+desktop/release/
+!desktop/assets/*.png

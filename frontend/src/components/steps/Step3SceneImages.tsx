@@ -220,8 +220,8 @@ export const Step3SceneImages: React.FC<Step3SceneImagesProps> = ({
             </svg>
             <span>Found {scenes.length} scene{scenes.length !== 1 ? 's' : ''} in your script</span>
           </div>
-          <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-apple-sm">
-            <p className="text-sm text-blue-800 dark:text-blue-300">
+          <div className="p-3 bg-accent-soft border border-accent-border rounded-apple-sm">
+            <p className="text-sm text-accent-text">
               💡 <strong>Tip:</strong> You can skip scenes you don't want to customize. The AI will automatically 
               generate high-quality images for them based on your script's context, characters, and style.
             </p>
@@ -238,12 +238,12 @@ export const Step3SceneImages: React.FC<Step3SceneImagesProps> = ({
             subtitle={`${scene.location} - ${scene.time}`}
           >
             <div className="space-y-4">
-              <div className="bg-bg-secondary p-3 rounded-apple-sm">
+              <div className="bg-surface-hover p-3 rounded-apple-sm">
                 <p className="text-sm text-text-primary font-medium mb-1">{scene.description}</p>
                 <p className="text-xs text-text-secondary">
                   {scene.location} • {scene.time}
                   {!scene.selectedImage && (
-                    <span className="ml-2 text-blue-600 dark:text-blue-400">
+                    <span className="ml-2 text-accent">
                       • Will auto-generate if skipped
                     </span>
                   )}
@@ -376,7 +376,7 @@ export const Step3SceneImages: React.FC<Step3SceneImagesProps> = ({
                       Generated Images ({scene.generatedImages.length})
                     </h4>
                     {scene.selectedImage && (
-                      <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                      <span className="text-xs text-success-text flex items-center gap-1">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                         </svg>
@@ -409,8 +409,8 @@ export const Step3SceneImages: React.FC<Step3SceneImagesProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-apple-red rounded-apple-md p-4">
-          <p className="text-apple-red text-sm">{error}</p>
+        <div className="bg-error-soft border border-error-border rounded-apple-md p-4">
+          <p className="text-error-text text-sm">{error}</p>
         </div>
       )}
 

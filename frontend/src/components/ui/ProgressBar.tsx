@@ -18,11 +18,11 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   const clampedProgress = Math.min(Math.max(progress, 0), 100);
 
   const colorClasses = {
-    blue: 'bg-apple-blue',
-    green: 'bg-apple-green',
-    orange: 'bg-apple-orange',
-    red: 'bg-apple-red',
-    gray: 'bg-gray-800',
+    blue: 'bg-accent',
+    green: 'bg-success',
+    orange: 'bg-warning',
+    red: 'bg-error',
+    gray: 'bg-[#EDEDF0]',
   };
   
   const sizeClasses = {

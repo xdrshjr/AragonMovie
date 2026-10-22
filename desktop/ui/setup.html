@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; img-src data:;"
+    />
+    <title>AragonMovie · 初始配置</title>
+    <link rel="stylesheet" href="setup.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="rail">
+        <div class="brand">
+          <div class="mark">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M9 7.6c0-.9 1-1.5 1.8-1L16.6 10a1.2 1.2 0 0 1 0 2l-5.8 3.4c-.8.5-1.8-.1-1.8-1V7.6Z" fill="#F3F3F5" />
+              <path d="M12 2.6 20.4 7v10L12 21.4 3.6 17V7L12 2.6Z" stroke="rgba(255,255,255,.22)" stroke-width="1.1" stroke-linejoin="round" />
+            </svg>
+          </div>
+          <div class="brand-text">
+            <h1>AragonMovie</h1>
+            <p id="brand-sub">初始配置</p>
+          </div>
+        </div>
+
+        <nav class="nav" id="nav"></nav>
+
+        <div class="rail-foot">
+          <div class="privacy">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M6 10V8a6 6 0 1 1 12 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              <rect x="4.5" y="10" width="15" height="10.5" rx="3" stroke="currentColor" stroke-width="1.6" />
+            </svg>
+            <span>凭证仅保存在本机，不会上传。</span>
+          </div>
+          <button class="link" id="btn-paths">查看数据目录</button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div class="topbar-text">
+            <div class="eyebrow" id="step-eyebrow">步骤 1 / 4</div>
+            <h2 id="step-title">LLM 文本模型</h2>
+            <p id="step-desc"></p>
+          </div>
+          <div class="topbar-status" id="topbar-status"></div>
+        </header>
+
+        <section class="body" id="step-body"></section>
+
+        <footer class="footbar">
+          <div class="foot-status" id="foot-status">
+            <span class="dot"></span>
+            <span id="foot-status-text">填写完成后可直接保存并测试连接</span>
+          </div>
+          <div class="foot-actions">
+            <button class="btn ghost" id="btn-prev">上一步</button>
+            <button class="btn ghost" id="btn-test">保存并测试</button>
+            <button class="btn primary" id="btn-next">下一步</button>
+          </div>
+        </footer>
+      </main>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="setup.js"></script>
+  </body>
+</html>

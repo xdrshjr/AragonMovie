@@ -61,7 +61,9 @@ class VoiceSettings(BaseModel):
       (its /audio/speech route does not exist), everything else -> compatible
     """
     enabled: bool = Field(False, description="Enable the TTS service")
-    provider: Literal["auto", "openai_compatible", "dashscope_native"] = "auto"
+    provider: Literal[
+        "auto", "openai_compatible", "dashscope_native", "volc_tts2"
+    ] = "auto"
     api_key: Optional[str] = Field(None, description="API key (write-only)")
     base_url: str = Field("https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1")
     model: str = Field("qwen-audio-3.0-tts-plus")
@@ -73,6 +75,12 @@ class VoiceSettings(BaseModel):
     native_api_key: Optional[str] = Field(None, description="DashScope key (write-only)")
     native_model: str = Field("qwen-tts")
     native_voice: str = Field("Cherry")
+    # 火山引擎语音合成 2.0（v3 双向 WebSocket，provider=volc_tts2 时生效）
+    volc_api_key: Optional[str] = Field(
+        None, description="Volcano TTS 2.0 API key (write-only)"
+    )
+    volc_resource_id: str = Field("seed-tts-2.0")
+    volc_voice: str = Field("zh_female_xiaohe_uranus_bigtts")
 
 
 # ==================== Video ====================
@@ -118,13 +126,34 @@ class AliTokenPlanVideoConfig(BaseModel):
     )
 
 
+class DoubaoVideoConfig(BaseModel):
+    """Volcano Ark Seedance video generation (image-to-video / text-to-video).
+
+    Ark is not OpenAI-compatible: it uses an async task API
+    (/contents/generations/tasks) and takes resolution/duration/ratio as
+    JSON fields.
+    """
+    api_key: Optional[str] = Field(None, description="Ark API key (write-only)")
+    base_url: str = Field("https://ark.cn-beijing.volces.com/api/v3")
+    endpoint: str = Field("/contents/generations/tasks")
+    model: str = Field("doubao-seedance-2-0-260128", description="Image-to-video model")
+    t2v_model: str = Field("doubao-seedance-2-0-260128", description="Text-to-video model")
+    default_resolution: Literal["480p", "720p", "1080p"] = "720p"
+    default_ratio: str = Field("16:9")
+    default_duration: int = Field(5, ge=4, le=15)
+    watermark: bool = False
+
+
 class VideoSettings(BaseModel):
-    service_type: Literal["veo3", "sora2", "ali_token_plan"] = "ali_token_plan"
+    service_type: Literal[
+        "veo3", "sora2", "ali_token_plan", "doubao"
+    ] = "ali_token_plan"
     veo3: Veo3Config = Field(default_factory=Veo3Config)
     sora2: Sora2Config = Field(default_factory=Sora2Config)
     ali_token_plan: AliTokenPlanVideoConfig = Field(
         default_factory=AliTokenPlanVideoConfig
     )
+    doubao: DoubaoVideoConfig = Field(default_factory=DoubaoVideoConfig)
 
 
 # ==================== Image ====================

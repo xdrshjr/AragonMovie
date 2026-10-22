@@ -1,5 +1,11 @@
 import type { Config } from 'tailwindcss';
 
+/**
+ * Every brand-ish colour resolves to a CSS custom property declared in
+ * `src/app/globals.css`, so markup never hardcodes a light surface. The app is
+ * dark-only (`<html class="dark">`), which keeps `dark:` variants meaningful
+ * while the tokens themselves already point at the gray-black palette.
+ */
 const config: Config = {
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,36 +15,65 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Apple-inspired color palette - Gray/Black Theme
+        // Gray-black surfaces
+        background: 'var(--color-background)',
+        'background-deep': 'var(--color-background-deep)',
+        surface: 'var(--color-surface)',
+        'surface-elevated': 'var(--color-surface-elevated)',
+        'surface-hover': 'var(--color-surface-hover)',
+        // Hairline separators
+        hairline: 'var(--color-border)',
+        'hairline-strong': 'var(--color-border-strong)',
+        // Typography
+        'text-primary': 'var(--color-text-primary)',
+        'text-secondary': 'var(--color-text-secondary)',
+        'text-tertiary': 'var(--color-text-tertiary)',
+        // Restrained cool-indigo accent
+        accent: 'var(--color-accent)',
+        'accent-strong': 'var(--color-accent-strong)',
+        'accent-soft': 'var(--color-accent-soft)',
+        'accent-border': 'var(--color-accent-border)',
+        'accent-ring': 'var(--color-accent-ring)',
+        'accent-text': 'var(--color-accent-text)',
+        primary: 'var(--color-accent)',
+        'primary-strong': 'var(--color-accent-strong)',
+        // Semantic tones — readable on #0A0A0B
+        success: 'var(--color-success)',
+        'success-soft': 'var(--color-success-soft)',
+        'success-border': 'var(--color-success-border)',
+        'success-text': 'var(--color-success-text)',
+        warning: 'var(--color-warning)',
+        'warning-soft': 'var(--color-warning-soft)',
+        'warning-border': 'var(--color-warning-border)',
+        'warning-text': 'var(--color-warning-text)',
+        error: 'var(--color-error)',
+        'error-soft': 'var(--color-error-soft)',
+        'error-border': 'var(--color-error-border)',
+        'error-text': 'var(--color-error-text)',
+        // Apple-inspired accents, tuned for dark backgrounds
         apple: {
-          blue: '#007AFF',
-          purple: '#5856D6',
-          green: '#34C759',
-          orange: '#FF9500',
-          red: '#FF3B30',
-          pink: '#FF2D55',
-          yellow: '#FFCC00',
+          blue: '#7C86FF',
+          'blue-dark': '#6A74F0',
+          purple: '#9C8CFF',
+          green: '#3FD07A',
+          orange: '#FFB020',
+          red: '#FF5A57',
+          pink: '#FF7BA9',
+          yellow: '#FFD166',
           teal: '#5AC8FA',
-          indigo: '#5856D6',
-          gray: '#2C2C2E',
-          'gray-hover': '#3A3A3C',
-          'gray-active': '#48484A',
+          indigo: '#7C86FF',
+          gray: 'var(--color-surface-elevated)',
+          'gray-hover': 'var(--color-surface-hover)',
+          'gray-active': 'var(--color-border-strong)',
+          'gray-light': 'var(--color-border)',
         },
-        // Light mode - Gray/Black Theme
-        background: '#F5F5F7',
-        surface: '#FFFFFF',
-        'surface-elevated': '#FAFAFA',
-        // Dark mode
-        'dark-background': '#000000',
-        'dark-surface': '#1C1C1E',
-        'dark-surface-elevated': '#2C2C2E',
-        // Text - Gray/Black Theme
-        'text-primary': '#1C1C1E',
-        'text-secondary': '#6E6E73',
-        'text-tertiary': '#AEAEB2',
-        'dark-text-primary': '#FFFFFF',
-        'dark-text-secondary': '#98989D',
-        'dark-text-tertiary': '#48484A',
+        // Legacy aliases kept so pre-existing `dark-*` references keep resolving
+        'dark-background': 'var(--color-background)',
+        'dark-surface': 'var(--color-surface)',
+        'dark-surface-elevated': 'var(--color-surface-elevated)',
+        'dark-text-primary': 'var(--color-text-primary)',
+        'dark-text-secondary': 'var(--color-text-secondary)',
+        'dark-text-tertiary': 'var(--color-text-tertiary)',
       },
       fontFamily: {
         sans: [
@@ -61,16 +96,21 @@ const config: Config = {
         'apple-xl': '20px',
       },
       boxShadow: {
-        'apple-sm': '0 1px 3px rgba(0, 0, 0, 0.1)',
-        'apple-md': '0 4px 12px rgba(0, 0, 0, 0.08)',
-        'apple-lg': '0 8px 24px rgba(0, 0, 0, 0.12)',
-        'apple-xl': '0 16px 48px rgba(0, 0, 0, 0.16)',
+        'apple-sm': 'var(--shadow-sm)',
+        'apple-md': 'var(--shadow-md)',
+        'apple-lg': 'var(--shadow-lg)',
+        'apple-xl': 'var(--shadow-xl)',
+        'apple-glow': '0 0 0 1px var(--color-accent-border), 0 12px 32px -16px rgba(124, 134, 255, 0.55)',
+      },
+      // A dark page needs a dark ring offset, otherwise focus rings show a white slab.
+      ringOffsetColor: {
+        DEFAULT: 'var(--color-background)',
       },
       transitionDuration: {
-        'apple': '300ms',
+        apple: '240ms',
       },
       transitionTimingFunction: {
-        'apple': 'cubic-bezier(0.4, 0, 0.2, 1)',
+        apple: 'cubic-bezier(0.4, 0, 0.2, 1)',
       },
     },
   },
@@ -79,4 +119,3 @@ const config: Config = {
 };
 
 export default config;
-

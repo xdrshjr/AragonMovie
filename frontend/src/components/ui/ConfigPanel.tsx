@@ -16,9 +16,9 @@ export const ConfigPanel: React.FC<ConfigPanelProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`bg-surface rounded-apple-lg border border-apple-gray-light p-6 ${className}`}>
+    <div className={`bg-surface rounded-apple-lg border border-hairline p-6 shadow-apple-md ${className}`}>
       <div className="mb-4">
-        <h3 className="text-apple-title3 font-semibold text-text-primary mb-1">
+        <h3 className="text-apple-title-3 font-semibold text-text-primary mb-1">
           {title}
         </h3>
         {description && (
@@ -89,7 +89,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
         disabled={disabled}
-        className="mt-1 w-5 h-5 rounded border-apple-gray-light text-apple-blue focus:ring-2 focus:ring-apple-blue focus:ring-offset-2 cursor-pointer disabled:cursor-not-allowed"
+        className="mt-1 w-5 h-5 rounded border-hairline bg-background-deep text-accent focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-background cursor-pointer disabled:cursor-not-allowed"
       />
       <div className="flex-1">
         <span className="text-apple-body text-text-primary block">
@@ -131,7 +131,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
       max={max}
       step={step}
       disabled={disabled}
-      className="w-24 px-3 py-2 border border-apple-gray-light rounded-apple-md text-apple-body text-text-primary bg-background focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+      className="w-24 px-3 py-2 border border-hairline rounded-apple-md text-apple-body text-text-primary bg-background-deep transition-colors hover:border-hairline-strong focus:outline-none focus:ring-2 focus:ring-accent-ring focus:border-accent-border disabled:opacity-50 disabled:cursor-not-allowed"
     />
   );
 };
@@ -166,7 +166,7 @@ export const Select: React.FC<SelectProps> = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled}
-      className={`px-4 py-2 border border-apple-gray-light rounded-apple-md text-apple-body text-text-primary bg-background focus:outline-none focus:ring-2 focus:ring-apple-blue focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
+      className={`px-4 py-2 border border-hairline rounded-apple-md text-apple-body text-text-primary bg-background-deep transition-colors hover:border-hairline-strong focus:outline-none focus:ring-2 focus:ring-accent-ring focus:border-accent-border disabled:opacity-50 disabled:cursor-not-allowed ${className}`}
     >
       {options.map((option) => (
         <option key={option.value} value={option.value}>
@@ -198,14 +198,14 @@ export const GenreCard: React.FC<GenreCardProps> = ({
       className={`
         relative p-4 rounded-apple-lg border-2 text-left transition-all duration-200
         ${selected
-          ? 'border-apple-blue bg-apple-blue/10 shadow-md'
-          : 'border-apple-gray-light bg-surface hover:border-apple-blue/50 hover:shadow-sm'
+          ? 'border-accent bg-accent-soft shadow-apple-md'
+          : 'border-hairline bg-surface hover:border-accent-border hover:shadow-apple-sm'
         }
       `}
     >
       {selected && (
-        <div className="absolute top-2 right-2 w-6 h-6 bg-apple-blue rounded-full flex items-center justify-center">
-          <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="absolute top-2 right-2 w-6 h-6 bg-accent rounded-full flex items-center justify-center">
+          <svg className="w-4 h-4 text-[#0A0A0B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>

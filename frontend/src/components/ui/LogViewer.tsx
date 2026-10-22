@@ -25,19 +25,19 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   const getLevelColor = (level: LogEntry['level']) => {
     const colors = {
       debug: 'text-text-secondary',
-      info: 'text-apple-blue',
-      warn: 'text-apple-orange',
-      error: 'text-apple-red',
+      info: 'text-accent-text',
+      warn: 'text-warning-text',
+      error: 'text-error-text',
     };
     return colors[level];
   };
 
   const getLevelBg = (level: LogEntry['level']) => {
     const colors = {
-      debug: 'bg-surface',
-      info: 'bg-blue-50 dark:bg-blue-900/20',
-      warn: 'bg-orange-50 dark:bg-orange-900/20',
-      error: 'bg-red-50 dark:bg-red-900/20',
+      debug: 'bg-transparent',
+      info: 'bg-accent-soft',
+      warn: 'bg-warning-soft',
+      error: 'bg-error-soft',
     };
     return colors[level];
   };
@@ -45,7 +45,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
   return (
     <div
       ref={containerRef}
-      className="bg-surface rounded-apple-md p-4 font-mono text-sm overflow-y-auto scroll-smooth"
+      className="bg-background-deep border border-hairline rounded-apple-md p-4 font-mono text-[13px] leading-5 overflow-y-auto scroll-smooth"
       style={{ maxHeight }}
     >
       {logs.length === 0 ? (
@@ -57,7 +57,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
           {logs.map((log, index) => (
             <div
               key={index}
-              className={`p-2 rounded transition-apple ${getLevelBg(log.level)}`}
+              className={`p-2 rounded border border-transparent transition-apple ${getLevelBg(log.level)}`}
             >
               <div className="flex items-start gap-3">
                 <span className="text-text-tertiary text-xs whitespace-nowrap">
@@ -71,7 +71,7 @@ export const LogViewer: React.FC<LogViewerProps> = ({
                 <span className="text-text-secondary text-xs">
                   [{log.component}]
                 </span>
-                <span className="text-text-primary flex-1">{log.message}</span>
+                <span className="text-text-primary flex-1 whitespace-pre-wrap break-words">{log.message}</span>
               </div>
               {log.data != null && (
                 <pre className="mt-1 ml-24 text-xs text-text-secondary overflow-x-auto">

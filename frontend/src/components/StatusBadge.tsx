@@ -21,33 +21,33 @@ const statusConfig: Record<ProjectStatus, {
 }> = {
   pending: {
     label: 'Pending',
-    bgColor: 'bg-[#FF9500]',
-    textColor: 'text-white',
+    bgColor: 'bg-[#FFB020] shadow-apple-sm',
+    textColor: 'text-[#0A0A0B]',
     icon: '⏳',
   },
   processing: {
     label: 'Generating...',
-    bgColor: 'bg-[#007AFF]',
-    textColor: 'text-white',
+    bgColor: 'bg-[#7C86FF] shadow-apple-sm',
+    textColor: 'text-[#0A0A0B]',
     icon: '⚡',
     animate: true,
   },
   completed: {
     label: 'Completed',
-    bgColor: 'bg-[#34C759]',
-    textColor: 'text-white',
+    bgColor: 'bg-[#3FD07A] shadow-apple-sm',
+    textColor: 'text-[#0A0A0B]',
     icon: '✓',
   },
   failed: {
     label: 'Failed',
-    bgColor: 'bg-[#FF3B30]',
-    textColor: 'text-white',
+    bgColor: 'bg-[#FF5A57] shadow-apple-sm',
+    textColor: 'text-[#0A0A0B]',
     icon: '✕',
   },
   cancelled: {
     label: 'Cancelled',
-    bgColor: 'bg-gray-500',
-    textColor: 'text-white',
+    bgColor: 'bg-[#2A2A31] border border-hairline',
+    textColor: 'text-text-secondary',
     icon: '⊘',
   },
 };

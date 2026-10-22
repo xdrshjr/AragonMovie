@@ -60,7 +60,7 @@ NATIVE_COSYVOICE_ENDPOINT = "/api/v1/services/aigc/text2speech/synthesis"
 # Hosts whose /audio/speech route is known to be unavailable (documented + 实测)
 KNOWN_BROKEN_SPEECH_HOSTS = ("token-plan.", "maas.aliyuncs.com")
 
-TTSProvider = Literal["auto", "openai_compatible", "dashscope_native"]
+TTSProvider = Literal["auto", "openai_compatible", "dashscope_native", "volc_tts2"]
 
 
 class TTSError(Exception):
@@ -134,12 +134,15 @@ def resolve_tts_transport(
     connection test. Raises :class:`TTSError` (non-retryable) for gateways that
     cannot synthesize speech and have no usable native fallback.
     """
-    if provider in ("openai_compatible", "dashscope_native"):
+    if provider in ("openai_compatible", "dashscope_native", "volc_tts2"):
         if provider == "openai_compatible" and strict:
             reject_broken_speech_gateway(base_url)
         return provider
 
     host = _host_of(base_url)
+    if "openspeech.bytedance.com" in host:
+        # Volcano speech gateway: only the v3 bidirectional WebSocket works.
+        return "volc_tts2"
     if "dashscope.aliyuncs.com" in host:
         return "dashscope_native"
     if any(marker in host for marker in KNOWN_BROKEN_SPEECH_HOSTS):
@@ -197,6 +200,9 @@ class TTSService:
         native_model: Optional[str] = None,
         native_voice: Optional[str] = None,
         native_endpoint: Optional[str] = None,
+        volc_api_key: Optional[str] = None,
+        volc_resource_id: Optional[str] = None,
+        volc_voice: Optional[str] = None,
         strict: bool = True,
     ):
         """
@@ -252,6 +258,18 @@ class TTSService:
         )
         self.native_endpoint = native_endpoint or self._default_native_endpoint()
 
+        # 火山引擎语音合成 2.0（v3 双向 WebSocket）
+        self.volc_api_key = volc_api_key or getattr(settings, "tts_volc_api_key", "")
+        self.volc_resource_id = (
+            volc_resource_id
+            or getattr(settings, "tts_volc_resource_id", "seed-tts-2.0")
+        )
+        self.volc_voice = (
+            volc_voice
+            or getattr(settings, "tts_volc_voice", "")
+            or "zh_female_xiaohe_uranus_bigtts"
+        )
+
         self.logger = logging.getLogger(__name__)
         self.effective_provider = self._resolve_provider(strict=strict)
 
@@ -260,6 +278,10 @@ class TTSService:
         if self.effective_provider == "dashscope_native" and not self.native_api_key:
             self.logger.warning(
                 "TTSService (dashscope_native) initialized without API key"
+            )
+        if self.effective_provider == "volc_tts2" and not self.volc_api_key:
+            self.logger.warning(
+                "TTSService (volc_tts2) initialized without the Volcano TTS 2.0 API key"
             )
 
         self.client = httpx.AsyncClient(
@@ -348,6 +370,11 @@ class TTSService:
         last_exc: Optional[TTSError] = None
         for attempt in range(3):
             try:
+                if self.effective_provider == "volc_tts2":
+                    return await self._volc_tts2_once(
+                        text, voice=voice, response_format=response_format,
+                        speed=speed,
+                    )
                 if self.effective_provider == "dashscope_native":
                     return await self._native_once(
                         text, voice=voice, model=model,
@@ -417,6 +444,39 @@ class TTSService:
     # ------------------------------------------------------------------
     # OpenAI-compatible transport
     # ------------------------------------------------------------------
+
+    async def _volc_tts2_once(
+        self,
+        text: str,
+        voice: Optional[str] = None,
+        response_format: Optional[str] = None,
+        speed: Optional[float] = None,
+    ) -> bytes:
+        """火山引擎语音合成 2.0：v3 双向 WebSocket 合成，返回音频字节。
+
+        该网关没有一次性 HTTP 合成接口，因此这里委托给
+        :class:`services.volc_tts_service.VolcTTS2Service`。
+        """
+        from services.volc_tts_service import VolcTTS2Service, VolcTTSError
+
+        service = VolcTTS2Service(
+            api_key=self.volc_api_key,
+            resource_id=self.volc_resource_id,
+            voice=voice or self.volc_voice,
+            speed=speed if speed is not None else None,
+        )
+        audio_format = (response_format or "mp3").lower()
+        if audio_format not in ("mp3", "wav", "pcm", "ogg_opus"):
+            audio_format = "mp3"
+        try:
+            return await service.synthesize(text, audio_format=audio_format)
+        except VolcTTSError as exc:
+            raise TTSError(
+                str(exc),
+                status_code=None,
+                retryable=exc.retryable,
+                code=exc.code or "TTS_VOLC_ERROR",
+            ) from exc
 
     async def _speech_once(
         self,

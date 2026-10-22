@@ -131,19 +131,19 @@ export default function NewProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--color-background)]">
+    <div className="min-h-screen">
       {/* Header */}
-      <header className="sticky top-0 z-50 glass-effect border-b border-[var(--color-border)]">
+      <header className="sticky top-0 z-50 glass-effect glow-top border-b border-hairline">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link
                 href="/"
-                className="text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors"
+                className="text-text-secondary hover:text-text-primary transition-colors"
               >
                 ← Back
               </Link>
-              <h1 className="text-2xl font-semibold text-[var(--color-text-primary)]">
+              <h1 className="text-2xl font-semibold tracking-[-0.02em] text-text-primary">
                 Create New Project
               </h1>
             </div>
@@ -156,7 +156,7 @@ export default function NewProjectPage() {
         <div className="space-y-8">
           {/* Project Details */}
           <section>
-            <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-4">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">
               Project Details
             </h2>
             <div className="space-y-4">
@@ -185,7 +185,7 @@ export default function NewProjectPage() {
 
           {/* Video Type Selection */}
           <section>
-            <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-4">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">
               Video Type *
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -196,23 +196,23 @@ export default function NewProjectPage() {
                   className={`
                     card-apple p-6 text-left transition-all duration-200
                     ${selectedVideoType === option.value
-                      ? 'ring-2 ring-[#007AFF] bg-[#007AFF]/5'
-                      : 'hover:shadow-apple-md'
+                      ? 'ring-2 ring-accent bg-accent-soft'
+                      : 'border-hairline hover:border-accent-border hover:shadow-apple-md'
                     }
                   `}
                 >
                   <div className="flex items-start gap-4">
                     <div className="text-4xl">{option.icon}</div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">
+                      <h3 className="text-lg font-semibold text-text-primary mb-1">
                         {option.label}
                       </h3>
-                      <p className="text-sm text-[var(--color-text-secondary)]">
+                      <p className="text-sm text-text-secondary">
                         {option.description}
                       </p>
                     </div>
                     {selectedVideoType === option.value && (
-                      <div className="text-[#007AFF] text-xl">✓</div>
+                      <div className="text-accent text-xl">✓</div>
                     )}
                   </div>
                 </button>
@@ -222,7 +222,7 @@ export default function NewProjectPage() {
 
           {/* Generation Mode Selection */}
           <section>
-            <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-4">
+            <h2 className="text-xl font-semibold text-text-primary mb-4">
               Generation Mode *
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -233,23 +233,23 @@ export default function NewProjectPage() {
                   className={`
                     card-apple p-6 text-left transition-all duration-200
                     ${selectedMode === option.value
-                      ? 'ring-2 ring-[#007AFF] bg-[#007AFF]/5'
-                      : 'hover:shadow-apple-md'
+                      ? 'ring-2 ring-accent bg-accent-soft'
+                      : 'border-hairline hover:border-accent-border hover:shadow-apple-md'
                     }
                   `}
                 >
                   <div className="flex items-start gap-4">
                     <div className="text-4xl">{option.icon}</div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-1">
+                      <h3 className="text-lg font-semibold text-text-primary mb-1">
                         {option.label}
                       </h3>
-                      <p className="text-sm text-[var(--color-text-secondary)]">
+                      <p className="text-sm text-text-secondary">
                         {option.description}
                       </p>
                     </div>
                     {selectedMode === option.value && (
-                      <div className="text-[#007AFF] text-xl">✓</div>
+                      <div className="text-accent text-xl">✓</div>
                     )}
                   </div>
                 </button>
@@ -259,13 +259,13 @@ export default function NewProjectPage() {
 
           {/* Error Message */}
           {error && (
-            <div className="card-apple p-4 bg-[#FF3B30]/10 border border-[#FF3B30]/20">
-              <p className="text-sm text-[#FF3B30]">{error}</p>
+            <div className="card-apple p-4 bg-error-soft border-error-border">
+              <p className="text-sm text-error-text">{error}</p>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-4 pt-6 border-t border-[var(--color-border)]">
+          <div className="flex items-center justify-end gap-4 pt-6 border-t border-hairline">
             <Link
               href="/"
               className="btn-apple btn-apple-secondary px-6 py-3"

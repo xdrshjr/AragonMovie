@@ -18,30 +18,30 @@ interface ProjectGridProps {
 const SkeletonCard: React.FC = () => (
   <div className="card-apple overflow-hidden animate-pulse">
     {/* Thumbnail Skeleton */}
-    <div className="w-full aspect-video bg-[var(--color-surface-elevated)]" />
+    <div className="w-full aspect-video bg-background-deep" />
 
     {/* Content Skeleton */}
     <div className="p-4">
       {/* Title */}
-      <div className="h-6 bg-[var(--color-surface-elevated)] rounded mb-2 w-3/4" />
+      <div className="h-6 bg-surface-hover rounded mb-2 w-3/4" />
 
       {/* Description */}
-      <div className="h-4 bg-[var(--color-surface-elevated)] rounded mb-1 w-full" />
-      <div className="h-4 bg-[var(--color-surface-elevated)] rounded mb-3 w-2/3" />
+      <div className="h-4 bg-surface-hover rounded mb-1 w-full" />
+      <div className="h-4 bg-surface-hover rounded mb-3 w-2/3" />
 
       {/* Metadata */}
       <div className="flex gap-4 mb-3">
-        <div className="h-3 bg-[var(--color-surface-elevated)] rounded w-24" />
-        <div className="h-3 bg-[var(--color-surface-elevated)] rounded w-16" />
+        <div className="h-3 bg-surface-hover rounded w-24" />
+        <div className="h-3 bg-surface-hover rounded w-16" />
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between pt-3 border-t border-[var(--color-border)]">
+      <div className="flex justify-between pt-3 border-t border-hairline">
         <div className="flex gap-2">
-          <div className="h-6 bg-[var(--color-surface-elevated)] rounded w-16" />
-          <div className="h-6 bg-[var(--color-surface-elevated)] rounded w-12" />
+          <div className="h-6 bg-surface-hover rounded w-16" />
+          <div className="h-6 bg-surface-hover rounded w-12" />
         </div>
-        <div className="h-6 bg-[var(--color-surface-elevated)] rounded w-16" />
+        <div className="h-6 bg-surface-hover rounded w-16" />
       </div>
     </div>
   </div>

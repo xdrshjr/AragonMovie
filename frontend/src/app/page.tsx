@@ -69,7 +69,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <Header />
 
@@ -79,7 +79,7 @@ export default function HomePage() {
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-3xl font-semibold text-text-primary mb-2">
+              <h2 className="text-3xl font-semibold tracking-[-0.02em] text-text-primary mb-2">
                 My Projects
               </h2>
               <p className="text-base text-text-secondary">
@@ -101,11 +101,11 @@ export default function HomePage() {
 
           {/* Error Message */}
           {error && (
-            <div className="card-apple p-6 mb-8 bg-[#FF3B30]/10 border border-[#FF3B30]/20">
+            <div className="card-apple p-6 mb-8 bg-error-soft border-error-border">
               <div className="flex items-start gap-3">
                 <span className="text-2xl">⚠️</span>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-[#FF3B30] mb-1">
+                  <h3 className="text-lg font-semibold text-error-text mb-1">
                     Failed to Load Projects
                   </h3>
                   <p className="text-sm text-text-secondary mb-3">

@@ -76,17 +76,17 @@ export default function Step0VideoTypeSelection({
     <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Header */}
       <div className="text-center space-y-2">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+        <h1 className="text-3xl font-bold tracking-[-0.02em] text-text-primary">
           选择视频类型
         </h1>
-        <p className="text-gray-600 dark:text-gray-400">
+        <p className="text-text-secondary">
           选择您想要生成的视频类型和风格，这将影响剧本生成和视觉效果
         </p>
       </div>
 
       {/* Video Type Selection */}
       <div className="space-y-4">
-        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+        <h2 className="text-xl font-semibold text-text-primary">
           1. 选择视频类型
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -99,12 +99,12 @@ export default function Step0VideoTypeSelection({
                 key={type}
                 onClick={() => handleTypeSelect(type)}
                 className={`
-                  relative p-6 rounded-lg border-2 transition-all duration-200
-                  hover:shadow-lg hover:scale-105
+                  relative p-6 rounded-apple-lg border-2 transition-all duration-200
+                  hover:shadow-apple-lg hover:scale-[1.02]
                   ${
                     isSelected
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-md'
-                      : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300'
+                      ? 'border-accent bg-accent-soft shadow-apple-md'
+                      : 'border-hairline bg-surface hover:border-accent-border'
                   }
                 `}
               >
@@ -112,24 +112,24 @@ export default function Step0VideoTypeSelection({
                 <div className="text-4xl mb-3">{def.icon}</div>
 
                 {/* Name */}
-                <div className="font-semibold text-lg text-gray-900 dark:text-white mb-2">
+                <div className="font-semibold text-lg text-text-primary mb-2">
                   {def.name_zh}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                <div className="text-sm text-text-tertiary mb-2">
                   {def.name_en}
                 </div>
 
                 {/* Description */}
-                <div className="text-sm text-gray-600 dark:text-gray-300">
+                <div className="text-sm text-text-secondary">
                   {def.description_zh}
                 </div>
 
                 {/* Selected indicator */}
                 {isSelected && (
                   <div className="absolute top-3 right-3">
-                    <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="w-6 h-6 bg-accent rounded-full flex items-center justify-center">
                       <svg
-                        className="w-4 h-4 text-white"
+                        className="w-4 h-4 text-[#0A0A0B]"
                         fill="none"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -151,7 +151,7 @@ export default function Step0VideoTypeSelection({
       {/* Subtype Selection */}
       {selectedType && (
         <div className="space-y-4 animate-fadeIn">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+          <h2 className="text-xl font-semibold text-text-primary">
             2. 选择子类型 ({getVideoTypeDisplayName(selectedType, 'zh')})
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -166,12 +166,12 @@ export default function Step0VideoTypeSelection({
                     key={subtype}
                     onClick={() => handleSubtypeSelect(subtype)}
                     className={`
-                      relative p-5 rounded-lg border-2 text-left transition-all duration-200
-                      hover:shadow-md
+                      relative p-5 rounded-apple-lg border-2 text-left transition-all duration-200
+                      hover:shadow-apple-md
                       ${
                         isSelected
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
-                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-blue-300'
+                          ? 'border-accent bg-accent-soft shadow-apple-md'
+                          : 'border-hairline bg-surface hover:border-accent-border'
                       }
                     `}
                   >
@@ -183,28 +183,28 @@ export default function Step0VideoTypeSelection({
                           w-5 h-5 rounded-full border-2 flex items-center justify-center
                           ${
                             isSelected
-                              ? 'border-blue-500 bg-blue-500'
-                              : 'border-gray-300 dark:border-gray-600'
+                              ? 'border-accent bg-accent'
+                              : 'border-hairline-strong'
                           }
                         `}
                         >
                           {isSelected && (
-                            <div className="w-2 h-2 bg-white rounded-full"></div>
+                            <div className="w-2 h-2 bg-[#0A0A0B] rounded-full"></div>
                           )}
                         </div>
                       </div>
 
                       <div className="flex-1 min-w-0">
                         {/* Name */}
-                        <div className="font-semibold text-gray-900 dark:text-white mb-1">
+                        <div className="font-semibold text-text-primary mb-1">
                           {subtypeDef.name_zh}
-                          <span className="text-sm text-gray-500 dark:text-gray-400 ml-2">
+                          <span className="text-sm text-text-tertiary ml-2">
                             ({subtypeDef.name_en})
                           </span>
                         </div>
 
                         {/* Description */}
-                        <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                        <div className="text-sm text-text-secondary mb-2">
                           {subtypeDef.description_zh}
                         </div>
 
@@ -213,7 +213,7 @@ export default function Step0VideoTypeSelection({
                           {subtypeDef.styleKeywords.slice(0, 3).map((keyword) => (
                             <span
                               key={keyword}
-                              className="inline-block px-2 py-0.5 text-xs rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
+                              className="inline-block px-2 py-0.5 text-xs rounded-full border border-hairline bg-surface-hover text-text-secondary"
                             >
                               {keyword}
                             </span>
@@ -232,7 +232,7 @@ export default function Step0VideoTypeSelection({
       {/* Scene Continuity Configuration */}
       {selectedType && selectedSubtype && (
         <div className="space-y-4 animate-fadeIn">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
+          <h2 className="text-xl font-semibold text-text-primary">
             3. 场景连续性配置
           </h2>
           <ConfigPanel
@@ -300,16 +300,16 @@ export default function Step0VideoTypeSelection({
                       }
                       className="w-48"
                     />
-                    <span className="text-sm font-mono text-gray-700 dark:text-gray-300 w-12">
+                    <span className="text-sm font-mono text-text-secondary w-12">
                       {continuityConfig.continuityReferenceWeight.toFixed(1)}
                     </span>
                   </div>
                 </ConfigRow>
 
-                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div className="bg-accent-soft border border-accent-border rounded-apple-md p-4">
                   <div className="flex items-start gap-3">
                     <svg
-                      className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5"
+                      className="w-5 h-5 text-accent flex-shrink-0 mt-0.5"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -321,9 +321,9 @@ export default function Step0VideoTypeSelection({
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                       />
                     </svg>
-                    <div className="text-sm text-blue-800 dark:text-blue-200">
+                    <div className="text-sm text-accent-text">
                       <p className="font-semibold mb-1">配置说明：</p>
-                      <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
+                      <ul className="list-disc list-inside space-y-1 text-text-secondary">
                         <li>
                           <strong>智能场景判断</strong>：LLM会分析场景的地点、时间、角色、剧情等，自动判断是否应该使用连续性
                         </li>
@@ -347,16 +347,16 @@ export default function Step0VideoTypeSelection({
       )}
 
       {/* Continue Button */}
-      <div className="flex justify-end pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="flex justify-end pt-6 border-t border-hairline">
         <button
           onClick={handleContinue}
           disabled={!isValid}
           className={`
-            px-8 py-3 rounded-lg font-semibold text-white transition-all duration-200
+            px-8 py-3 rounded-apple-md font-semibold transition-all duration-200
             ${
               isValid
-                ? 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg'
-                : 'bg-gray-300 dark:bg-gray-700 cursor-not-allowed'
+                ? 'bg-[#EDEDF0] text-[#0A0A0B] hover:bg-white shadow-apple-sm hover:shadow-apple-md'
+                : 'bg-white/5 text-text-tertiary border border-hairline cursor-not-allowed'
             }
           `}
         >
@@ -366,12 +366,12 @@ export default function Step0VideoTypeSelection({
 
       {/* Helper text */}
       {!selectedType && (
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-center text-sm text-text-tertiary">
           请先选择一个视频类型
         </div>
       )}
       {selectedType && !selectedSubtype && (
-        <div className="text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="text-center text-sm text-text-tertiary">
           请选择一个子类型以继续
         </div>
       )}

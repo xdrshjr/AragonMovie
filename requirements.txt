@@ -14,6 +14,8 @@ python-multipart==0.0.6
 # HTTP clients
 httpx==0.25.2
 aiohttp==3.9.1
+# 火山引擎语音合成 2.0（v3 双向 WebSocket）需要
+websockets>=12.0
 requests==2.31.0
 
 # Video processing

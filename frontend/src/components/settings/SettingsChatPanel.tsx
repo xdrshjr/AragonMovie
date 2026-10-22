@@ -32,9 +32,9 @@ interface SettingsChatPanelProps {
 }
 
 const MODE_LABELS: Record<string, { text: string; cls: string }> = {
-  aragon: { text: 'AragonAgent · 可自动修改配置', cls: 'bg-apple-green/10 text-apple-green' },
-  llm_fallback: { text: '降级模式 · 仅提供建议', cls: 'bg-apple-orange/10 text-apple-orange' },
-  unavailable: { text: '未配置', cls: 'bg-apple-red/10 text-apple-red' },
+  aragon: { text: 'AragonAgent · 可自动修改配置', cls: 'bg-success-soft border border-success-border text-success-text' },
+  llm_fallback: { text: '降级模式 · 仅提供建议', cls: 'bg-warning-soft border border-warning-border text-warning-text' },
+  unavailable: { text: '未配置', cls: 'bg-error-soft border border-error-border text-error-text' },
 };
 
 export default function SettingsChatPanel({
@@ -211,12 +211,12 @@ export default function SettingsChatPanel({
       </div>
 
       {unavailable && (
-        <div className="mb-3 p-3 rounded-apple-md bg-surface-elevated text-sm text-text-secondary">
+        <div className="mb-3 p-3 rounded-apple-md bg-background-deep border border-hairline text-sm text-text-secondary">
           {agentStatus?.message ?? '请先在下方配置 Agent 大模型'}
           {agentStatus && !agentStatus.aragon_installed && (
             <span className="block mt-1 text-xs">
               提示：安装 AragonAgent 后可解锁自动配置能力：
-              <code className="mx-1 px-1 bg-surface rounded">npm i -g @aragon-agent/cli</code>
+              <code className="mx-1 px-1 bg-surface-hover border border-hairline rounded">npm i -g @aragon-agent/cli</code>
               （需要 Node.js ≥ 18）
             </span>
           )}
@@ -224,7 +224,7 @@ export default function SettingsChatPanel({
       )}
 
       {banner && (
-        <div className="mb-3 p-2 rounded-apple-md bg-apple-green/10 text-apple-green text-sm">
+        <div className="mb-3 p-2 rounded-apple-md bg-success-soft border border-success-border text-success-text text-sm">
           {banner}
         </div>
       )}
@@ -243,8 +243,8 @@ export default function SettingsChatPanel({
                 key={i}
                 className={`text-xs px-3 py-2 rounded-apple-md border ${
                   msg.isError
-                    ? 'border-apple-red/30 bg-apple-red/5 text-apple-red'
-                    : 'border-[var(--color-border)] bg-surface text-text-secondary'
+                    ? 'border-error-border bg-error-soft text-error-text'
+                    : 'border-hairline bg-surface text-text-secondary'
                 }`}
               >
                 <span className="font-medium">
@@ -262,7 +262,7 @@ export default function SettingsChatPanel({
                 key={i}
                 className={`text-xs px-3 py-2 rounded-apple-md ${
                   msg.isError
-                    ? 'bg-apple-red/10 text-apple-red'
+                    ? 'bg-error-soft text-error-text'
                     : 'bg-surface-elevated text-text-secondary'
                 }`}
               >
@@ -276,7 +276,7 @@ export default function SettingsChatPanel({
               <div
                 className={`max-w-[85%] px-4 py-2.5 rounded-apple-lg text-sm whitespace-pre-wrap break-words ${
                   isUser
-                    ? 'bg-apple-blue text-white'
+                    ? 'bg-accent text-[#0A0A0B]'
                     : 'bg-surface-elevated text-text-primary'
                 }`}
               >
@@ -291,7 +291,7 @@ export default function SettingsChatPanel({
       </div>
 
       {suggestedPatch && !patchApplied && (
-        <div className="mb-3 p-3 rounded-apple-md bg-apple-blue/5 border border-apple-blue/20">
+        <div className="mb-3 p-3 rounded-apple-md bg-accent-soft border border-accent-border">
           <p className="text-sm text-text-primary mb-2">助手给出了配置建议，是否应用？</p>
           <Button size="sm" loading={applying} onClick={handleApplyPatch}>
             应用建议配置

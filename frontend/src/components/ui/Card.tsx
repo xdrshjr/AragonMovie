@@ -17,12 +17,14 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`card-apple border border-gray-200 ${hoverable ? '' : 'hover:shadow-apple-md hover:transform-none'} ${className}`}
+      className={`card-apple border border-hairline ${
+        hoverable ? '' : 'hover:shadow-apple-md hover:transform-none'
+      } ${className}`}
     >
       {(title || subtitle) && (
         <div className="mb-4">
           {title && (
-            <h3 className="text-lg font-semibold text-text-primary">
+            <h3 className="text-lg font-semibold text-text-primary tracking-[-0.01em]">
               {title}
             </h3>
           )}
@@ -39,4 +41,3 @@ export const Card: React.FC<CardProps> = ({
 };
 
 export default Card;
-

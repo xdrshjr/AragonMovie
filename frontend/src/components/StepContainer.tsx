@@ -30,10 +30,10 @@ export const StepContainer: React.FC<StepContainerProps> = ({
                 <div
                   className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold transition-apple ${
                     step.number < currentStep
-                      ? 'bg-apple-green text-white'
+                      ? 'bg-success text-[#0A0A0B]'
                       : step.number === currentStep
-                      ? 'bg-gray-800 text-white'
-                      : 'bg-gray-200 text-text-secondary'
+                      ? 'bg-[#EDEDF0] text-[#0A0A0B] shadow-apple-sm'
+                      : 'bg-surface-hover text-text-tertiary border border-hairline'
                   }`}
                 >
                   {step.number < currentStep ? (
@@ -55,7 +55,7 @@ export const StepContainer: React.FC<StepContainerProps> = ({
                 <p
                   className={`mt-2 text-xs font-medium text-center ${
                     step.number === currentStep
-                      ? 'text-gray-800'
+                      ? 'text-text-primary'
                       : 'text-text-secondary'
                   }`}
                 >
@@ -71,8 +71,8 @@ export const StepContainer: React.FC<StepContainerProps> = ({
                 <div
                   className={`flex-1 h-1 mx-2 transition-apple ${
                     step.number < currentStep
-                      ? 'bg-apple-green'
-                      : 'bg-gray-200'
+                      ? 'bg-success'
+                      : 'bg-surface-hover'
                   }`}
                   style={{ maxWidth: '80px' }}
                 />

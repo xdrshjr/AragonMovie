@@ -281,7 +281,7 @@ export default function SettingsPage() {
         测试连接
       </Button>
       {notice && dirty[category] === false && (
-        <span className="text-sm text-apple-green">{notice}</span>
+        <span className="text-sm text-success-text">{notice}</span>
       )}
     </div>
   );
@@ -314,7 +314,7 @@ export default function SettingsPage() {
 
   if (loadError && !settings) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 px-8 py-8">
           <div className="max-w-3xl mx-auto card-apple p-8 text-center">
@@ -332,7 +332,7 @@ export default function SettingsPage() {
 
   if (!settings || !drafts.text) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="spinner-apple w-10 h-10" />
@@ -342,13 +342,13 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 px-6 py-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto">
           <div className="mb-6 flex items-start justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-text-primary mb-1">设置中心</h1>
+              <h1 className="text-3xl font-bold tracking-[-0.02em] text-text-primary mb-1">设置中心</h1>
               <p className="text-text-secondary">
                 随时配置文字 / 语音 / 视频 / 图像 / Agent 模型服务的 URL、凭证与模型，保存后即时生效
               </p>
@@ -363,7 +363,7 @@ export default function SettingsPage() {
           </div>
 
           {notice && (
-            <div className="mb-4 p-3 rounded-apple-md bg-apple-green/10 text-apple-green text-sm">
+            <div className="mb-4 p-3 rounded-apple-md bg-success-soft border border-success-border text-success-text text-sm">
               {notice}
             </div>
           )}
@@ -447,6 +447,7 @@ export default function SettingsPage() {
                       { value: 'auto', label: '自动（DashScope 主机/Token Plan 走原生）' },
                       { value: 'openai_compatible', label: 'OpenAI 兼容 /audio/speech' },
                       { value: 'dashscope_native', label: 'DashScope 原生合成' },
+                      { value: 'volc_tts2', label: '火山引擎 TTS 2.0（豆包语音合成）' },
                     ],
                   },
                   { key: 'base_url', label: 'Base URL', placeholder: 'https://api.openai.com/v1' },
@@ -515,15 +516,15 @@ export default function SettingsPage() {
                   默认视频服务
                 </label>
                 <div className="flex gap-2 flex-wrap">
-                  {(['veo3', 'sora2', 'ali_token_plan'] as const).map((svc) => (
+                  {(['ali_token_plan', 'doubao', 'veo3', 'sora2'] as const).map((svc) => (
                     <button
                       key={svc}
                       type="button"
                       onClick={() => setField('video', 'service_type', svc)}
                       className={`px-4 py-2 rounded-apple-md border-2 text-sm font-medium transition-colors ${
                         getField('video', 'service_type') === svc
-                          ? 'border-apple-blue bg-apple-blue/10 text-apple-blue'
-                          : 'border-[var(--color-border)] text-text-secondary'
+                          ? 'border-accent bg-accent-soft text-accent-text'
+                          : 'border-hairline text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       {svc === 'veo3' ? 'Veo3' : svc === 'sora2' ? 'Sora2' : 'Ali Coding Plan'}
@@ -629,6 +630,44 @@ export default function SettingsPage() {
                 testing={testingCat === 'video'}
                 testResult={resultFor('video', 'ali_token_plan')}
               />
+              <ProviderCard
+                title="豆包 Seedance（火山方舟）"
+                subtitle="火山方舟 Ark 异步视频任务：图生视频 / 文生视频。非 OpenAI 兼容接口，分辨率 / 时长 / 比例为 JSON 字段。"
+                badge={getField('video', 'service_type') === 'doubao' ? '当前使用' : undefined}
+                fields={[
+                  { key: 'api_key', label: 'Ark API Key', secret: true, hint: '火山方舟控制台 → API Key 管理（UUID 形式）' },
+                  { key: 'model', label: '图生视频模型 (i2v)', placeholder: 'doubao-seedance-2-0-260128' },
+                  { key: 't2v_model', label: '文生视频模型 (t2v)', placeholder: 'doubao-seedance-2-0-260128' },
+                  {
+                    key: 'default_resolution',
+                    label: '默认分辨率',
+                    type: 'select',
+                    options: [
+                      { value: '480p', label: '480p' },
+                      { value: '720p', label: '720p' },
+                      { value: '1080p', label: '1080p' },
+                    ],
+                  },
+                  { key: 'default_ratio', label: '画面比例', placeholder: '16:9' },
+                  { key: 'default_duration', label: '默认时长（秒，4-15）', type: 'number' },
+                  { key: 'base_url', label: 'Base URL', placeholder: 'https://ark.cn-beijing.volces.com/api/v3' },
+                  { key: 'endpoint', label: 'Endpoint', placeholder: '/contents/generations/tasks' },
+                ]}
+                values={{
+                  base_url: getField('video', 'doubao.base_url'),
+                  endpoint: getField('video', 'doubao.endpoint'),
+                  api_key: getField('video', 'doubao.api_key'),
+                  model: getField('video', 'doubao.model'),
+                  t2v_model: getField('video', 'doubao.t2v_model'),
+                  default_resolution: getField('video', 'doubao.default_resolution'),
+                  default_ratio: getField('video', 'doubao.default_ratio'),
+                  default_duration: getField('video', 'doubao.default_duration'),
+                }}
+                maskedKey={secretPlaceholder(settings.video.doubao?.api_key)}
+                onChange={(k, v) => setField('video', `doubao.${k}`, v)}
+                testing={testingCat === 'video'}
+                testResult={resultFor('video', 'doubao')}
+              />
               <SaveBar category="video" />
             </TabsContent>
 
@@ -646,8 +685,8 @@ export default function SettingsPage() {
                       onClick={() => setField('image', 'service_type', svc)}
                       className={`px-4 py-2 rounded-apple-md border-2 text-sm font-medium transition-colors ${
                         getField('image', 'service_type') === svc
-                          ? 'border-apple-blue bg-apple-blue/10 text-apple-blue'
-                          : 'border-[var(--color-border)] text-text-secondary'
+                          ? 'border-accent bg-accent-soft text-accent-text'
+                          : 'border-hairline text-text-secondary hover:text-text-primary'
                       }`}
                     >
                       {svc === 'nano_banana'
@@ -820,7 +859,7 @@ export default function SettingsPage() {
                   description="保存后在上方聊天面板与助手对话"
                 />
                 {agentStatus && (
-                  <div className="mt-2 p-3 rounded-apple-md bg-surface-elevated text-sm text-text-secondary">
+                  <div className="mt-2 p-3 rounded-apple-md bg-background-deep border border-hairline text-sm text-text-secondary">
                     <p>
                       aragon CLI：
                       {agentStatus.aragon_installed

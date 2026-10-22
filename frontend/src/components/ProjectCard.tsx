@@ -75,7 +75,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
         "
       >
         {/* Thumbnail */}
-        <div className="relative w-full aspect-video bg-[var(--color-surface-elevated)]">
+        <div className="relative w-full aspect-video bg-background-deep">
           {thumbnailUrl ? (
             <Image
               src={thumbnailUrl}
@@ -99,19 +99,19 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
         {/* Content */}
         <div className="p-4">
           {/* Project Name */}
-          <h3 className="text-lg font-semibold text-[var(--color-text-primary)] mb-2 line-clamp-1">
+          <h3 className="text-lg font-semibold text-text-primary mb-2 line-clamp-1">
             {project.name}
           </h3>
 
           {/* Description */}
           {project.description && (
-            <p className="text-sm text-[var(--color-text-secondary)] mb-3 line-clamp-2">
+            <p className="text-sm text-text-secondary mb-3 line-clamp-2">
               {project.description}
             </p>
           )}
 
           {/* Metadata */}
-          <div className="flex items-center gap-4 text-xs text-[var(--color-text-tertiary)] mb-3">
+          <div className="flex items-center gap-4 text-xs text-text-tertiary mb-3">
             <span className="flex items-center gap-1">
               📅 {formatDate(project.created_at)}
             </span>
@@ -125,13 +125,13 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
           {/* Progress Bar (for in-progress projects) */}
           {project.status === 'processing' && (
             <div className="mb-3">
-              <div className="flex items-center justify-between text-xs text-[var(--color-text-secondary)] mb-1">
+              <div className="flex items-center justify-between text-xs text-text-secondary mb-1">
                 <span>Progress</span>
                 <span>{project.progress}%</span>
               </div>
               <div className="progress-apple">
                 <div
-                  className="progress-apple-bar"
+                  className="progress-apple-fill"
                   style={{ width: `${project.progress}%` }}
                 />
               </div>
@@ -139,12 +139,12 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border)]">
-            <div className="flex items-center gap-2 text-xs text-[var(--color-text-tertiary)]">
-              <span className="px-2 py-1 rounded bg-[var(--color-surface-elevated)]">
+          <div className="flex items-center justify-between pt-3 border-t border-hairline">
+            <div className="flex items-center gap-2 text-xs text-text-tertiary">
+              <span className="px-2 py-1 rounded border border-hairline bg-surface-hover">
                 {project.video_type.replaceAll('_', ' ')}
               </span>
-              <span className="px-2 py-1 rounded bg-[var(--color-surface-elevated)]">
+              <span className="px-2 py-1 rounded bg-surface-hover">
                 {project.mode}
               </span>
             </div>
@@ -157,8 +157,8 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project, onDelete }) =
                 text-xs px-3 py-1.5 rounded-md
                 transition-colors duration-200
                 ${showDeleteConfirm
-                  ? 'bg-[#FF3B30] text-white hover:bg-[#FF2D1F]'
-                  : 'text-[var(--color-text-tertiary)] hover:text-[#FF3B30] hover:bg-[var(--color-surface-elevated)]'
+                  ? 'bg-error text-white hover:bg-[#FF7370]'
+                  : 'text-text-tertiary hover:text-error-text hover:bg-surface-hover'
                 }
                 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}
               `}

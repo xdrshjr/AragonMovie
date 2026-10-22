@@ -66,6 +66,9 @@ FIELD_MAP: List[Tuple[str, str]] = [
     ("voice.native_api_key", "tts_native_api_key"),
     ("voice.native_model", "tts_native_model"),
     ("voice.native_voice", "tts_native_voice"),
+    ("voice.volc_api_key", "tts_volc_api_key"),
+    ("voice.volc_resource_id", "tts_volc_resource_id"),
+    ("voice.volc_voice", "tts_volc_voice"),
     # video
     ("video.service_type", "video_service_type"),
     ("video.veo3.api_key", "veo3_api_key"),
@@ -91,6 +94,15 @@ FIELD_MAP: List[Tuple[str, str]] = [
     ("video.ali_token_plan.default_size", "ali_video_default_size"),
     ("video.ali_token_plan.default_duration", "ali_video_default_duration"),
     ("video.ali_token_plan.watermark", "ali_video_watermark"),
+    ("video.doubao.api_key", "doubao_video_api_key"),
+    ("video.doubao.base_url", "doubao_video_base_url"),
+    ("video.doubao.endpoint", "doubao_video_endpoint"),
+    ("video.doubao.model", "doubao_video_model"),
+    ("video.doubao.t2v_model", "doubao_video_t2v_model"),
+    ("video.doubao.default_resolution", "doubao_video_default_resolution"),
+    ("video.doubao.default_ratio", "doubao_video_default_ratio"),
+    ("video.doubao.default_duration", "doubao_video_default_duration"),
+    ("video.doubao.watermark", "doubao_video_watermark"),
     # image
     ("image.service_type", "image_service_type"),
     ("image.doubao.api_key", "doubao_api_key"),
@@ -137,6 +149,8 @@ SECRET_PATHS = {
     "image.midjourney.api_key",
     "image.ali_token_plan.api_key",
     "video.ali_token_plan.api_key",
+    "video.doubao.api_key",
+    "voice.volc_api_key",
     "agent.api_key",
 }
 

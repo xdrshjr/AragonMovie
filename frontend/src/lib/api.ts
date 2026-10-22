@@ -12,10 +12,24 @@ import {
   APIException,
 } from '@/lib/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const ENV_API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
 
+/**
+ * Resolve the backend base URL at RUNTIME.
+ *
+ * The Electron desktop shell starts the Python backend on a free port and
+ * injects it through the preload bridge (window.aragonDesktop.apiBase), so a
+ * packaged build never has to hard-code the port. Outside the desktop shell it
+ * falls back to NEXT_PUBLIC_API_BASE_URL / http://localhost:8000.
+ */
 export function getApiBase(): string {
-  return API_BASE;
+  if (typeof window !== 'undefined') {
+    const injected = (window as { aragonDesktop?: { apiBase?: string } }).aragonDesktop?.apiBase;
+    if (injected) {
+      return injected.replace(/\/+$/, '');
+    }
+  }
+  return ENV_API_BASE;
 }
 
 // ======================================================================
@@ -36,7 +50,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}${path}`, {
+    response = await fetch(`${getApiBase()}${path}`, {
       method,
       headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
       body: body !== undefined ? JSON.stringify(body) : undefined,
@@ -48,7 +62,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       throw new APIException(`Request timed out after ${timeoutMs / 1000}s: ${path}`, 'TIMEOUT', null, true);
     }
     throw new APIException(
-      `Network error: cannot reach backend at ${API_BASE}`,
+      `Network error: cannot reach backend at ${getApiBase()}`,
       'NETWORK_ERROR',
       e,
       true
@@ -167,6 +181,14 @@ export interface ModelSettings {
       /** Request the watermarked variant (default false). */
       watermark: boolean;
     };
+    /** 豆包 Seedance（火山方舟 Ark 异步视频任务） */
+    doubao: ProviderConfig & {
+      t2v_model: string;
+      default_resolution: '480p' | '720p' | '1080p';
+      default_ratio: string;
+      default_duration: number;
+      watermark: boolean;
+    };
   };
   image: {
     service_type: 'doubao' | 'nano_banana' | 'midjourney' | 'ali_token_plan';
@@ -201,7 +223,12 @@ export interface ProviderConfig {
   model: string;
 }
 
-export type TTSProvider = 'auto' | 'openai_compatible' | 'dashscope_native';
+export type TTSProvider =
+  | 'auto'
+  | 'openai_compatible'
+  | 'dashscope_native'
+  /** 火山引擎语音合成 2.0（v3 双向 WebSocket） */
+  | 'volc_tts2';
 
 export interface VoiceConfig {
   enabled: boolean;
@@ -218,6 +245,10 @@ export interface VoiceConfig {
   native_api_key: string | null;
   native_model: string;
   native_voice: string;
+  /** 火山引擎语音合成 2.0 */
+  volc_api_key: string | null;
+  volc_resource_id: string;
+  volc_voice: string;
 }
 
 /** Normalized agent-chat SSE event (see backend settings.py endpoint docs). */
@@ -276,7 +307,7 @@ const settingsApi = {
     onEvent: (event: AgentChatEvent) => void,
     options?: { signal?: AbortSignal }
   ): Promise<void> {
-    const response = await fetch(`${API_BASE}/api/v1/settings/agent/chat`, {
+    const response = await fetch(`${getApiBase()}/api/v1/settings/agent/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -345,7 +376,7 @@ export const apiClient = {
   },
 
   getProjectThumbnailUrl(projectId: string): string {
-    return `${API_BASE}/api/v1/projects/${projectId}/thumbnail`;
+    return `${getApiBase()}/api/v1/projects/${projectId}/thumbnail`;
   },
 
   // ---- llm ----

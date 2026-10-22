@@ -320,22 +320,22 @@ export const Step1ScriptInput: React.FC<Step1ScriptInputProps> = ({
     <div className="space-y-6">
       {/* Video Type Display Badge */}
       {videoType && videoSubtype && (
-        <div className="flex items-center justify-between p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+        <div className="flex items-center justify-between p-4 bg-accent-soft border border-accent-border rounded-apple-md">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-5 h-5 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
               </svg>
-              <span className="font-semibold text-gray-900 dark:text-white">
+              <span className="font-semibold text-text-primary">
                 视频类型:
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 rounded-full text-sm font-medium">
+              <span className="px-3 py-1 border border-accent-border bg-accent-soft text-accent-text rounded-full text-sm font-medium">
                 {getVideoTypeDisplayName(videoType, 'zh')}
               </span>
-              <span className="text-gray-400 dark:text-gray-500">→</span>
-              <span className="px-3 py-1 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-100 rounded-full text-sm font-medium">
+              <span className="text-text-tertiary">→</span>
+              <span className="px-3 py-1 border border-accent-border bg-accent-soft text-accent-text rounded-full text-sm font-medium">
                 {getSubtypeDisplayName(videoType, videoSubtype, 'zh')}
               </span>
             </div>
@@ -343,7 +343,7 @@ export const Step1ScriptInput: React.FC<Step1ScriptInputProps> = ({
           {onBack && (
             <button
               onClick={onBack}
-              className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
               ← 返回修改
             </button>
@@ -357,7 +357,7 @@ export const Step1ScriptInput: React.FC<Step1ScriptInputProps> = ({
           <button
             type="button"
             onClick={() => setShowConfig(!showConfig)}
-            className="flex items-center gap-2 mb-4 text-apple-blue hover:text-apple-blue-dark transition-colors"
+            className="flex items-center gap-2 mb-4 text-accent hover:text-accent-strong transition-colors"
           >
             <svg
               className={`w-5 h-5 transition-transform ${showConfig ? 'rotate-90' : ''}`}
@@ -387,11 +387,11 @@ export const Step1ScriptInput: React.FC<Step1ScriptInputProps> = ({
 
           {/* Configuration Errors */}
           {!configValid && configErrors.length > 0 && (
-            <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-apple-red rounded-apple-md p-4">
-              <h4 className="text-sm font-semibold text-apple-red mb-2">
+            <div className="mt-4 bg-error-soft border border-error-border rounded-apple-md p-4">
+              <h4 className="text-sm font-semibold text-error-text mb-2">
                 ⚠️ Configuration Errors:
               </h4>
-              <ul className="text-sm text-apple-red list-disc list-inside space-y-1">
+              <ul className="text-sm text-error-text list-disc list-inside space-y-1">
                 {configErrors.map((error, idx) => (
                   <li key={idx}>{error}</li>
                 ))}
@@ -466,7 +466,7 @@ export const Step1ScriptInput: React.FC<Step1ScriptInputProps> = ({
 
               {/* Sample Format Display */}
               {showSample && (
-                <div className="mt-4 p-4 bg-surface rounded-apple-md border border-apple-gray-light">
+                <div className="mt-4 p-4 bg-background-deep rounded-apple-md border border-hairline">
                   <h4 className="text-apple-headline mb-2 text-text-primary">
                     Sample YAML Format:
                   </h4>
@@ -506,12 +506,12 @@ export const Step1ScriptInput: React.FC<Step1ScriptInputProps> = ({
 
       {/* Validation Warnings */}
       {validationWarnings.length > 0 && (
-        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-400 rounded-apple-md p-4">
-          <h4 className="text-sm font-semibold text-yellow-800 dark:text-yellow-200 mb-2">
+        <div className="bg-warning-soft border border-warning-border rounded-apple-md p-4">
+          <h4 className="text-sm font-semibold text-warning-text mb-2">
             ⚠️ Warnings ({validationWarnings.length}):
           </h4>
           <div className="max-h-40 overflow-y-auto">
-            <ul className="text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside space-y-1 pr-2">
+            <ul className="text-sm text-warning-text list-disc list-inside space-y-1 pr-2">
               {validationWarnings.map((warning, idx) => (
                 <li key={idx}>{warning}</li>
               ))}
@@ -522,8 +522,8 @@ export const Step1ScriptInput: React.FC<Step1ScriptInputProps> = ({
 
       {/* Error Display */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-apple-red rounded-apple-md p-4">
-          <p className="text-apple-red text-sm font-medium">❌ {error}</p>
+        <div className="bg-error-soft border border-error-border rounded-apple-md p-4">
+          <p className="text-error-text text-sm font-medium">❌ {error}</p>
         </div>
       )}
 

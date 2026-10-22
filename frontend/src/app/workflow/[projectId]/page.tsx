@@ -234,7 +234,7 @@ export default function WorkflowPage() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
+    <main className="min-h-screen flex flex-col">
       <Header />
 
       <div className="flex-1 flex">

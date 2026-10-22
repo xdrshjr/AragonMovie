@@ -1,0 +1,28 @@
+{
+  "name": "aragon-movie-desktop",
+  "productName": "AragonMovie",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AragonMovie 桌面端 — AI 短剧自动化生成工作台",
+  "author": {
+    "name": "Aragon Studio",
+    "email": "dev@aragon.local"
+  },
+  "license": "UNLICENSED",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "build:web": "node scripts/build-web.js",
+    "build:app": "node scripts/build-app-code.js",
+    "build:python": "powershell -NoProfile -ExecutionPolicy Bypass -File ../build/desktop/build-python-runtime.ps1",
+    "verify:python": "powershell -NoProfile -ExecutionPolicy Bypass -File ../build/desktop/verify-python-runtime.ps1",
+    "build:all": "npm run build:app && npm run build:web && npm run build:python",
+    "dist": "node scripts/dist.js",
+    "dist:dir": "node scripts/dist.js --dir"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  }
+}

@@ -34,6 +34,7 @@ import logging
 from services.veo3_service import Veo3Service
 from services.sora2_service import Sora2Service
 from services.ali_token_plan_service import AliTokenPlanVideoService
+from services.doubao_video_service import DoubaoVideoService
 from config.settings import settings
 
 
@@ -54,13 +55,13 @@ class VideoServiceFactory:
         SUPPORTED_SERVICES (list): List of supported service types
     """
 
-    SUPPORTED_SERVICES = ["veo3", "sora2", "ali_token_plan"]
+    SUPPORTED_SERVICES = ["veo3", "sora2", "ali_token_plan", "doubao"]
 
     @staticmethod
     def create_service(
         service_type: Optional[str] = None,
         config_override: Optional[Dict[str, Any]] = None
-    ) -> Union[Veo3Service, Sora2Service, AliTokenPlanVideoService]:
+    ) -> Union[Veo3Service, Sora2Service, AliTokenPlanVideoService, DoubaoVideoService]:
         """Create a video generation service instance
 
         This method creates and returns a video generation service instance
@@ -132,6 +133,10 @@ class VideoServiceFactory:
             return VideoServiceFactory._create_sora2_service(config_override, logger)
         elif service_type == "ali_token_plan":
             return VideoServiceFactory._create_ali_token_plan_service(
+                config_override, logger
+            )
+        elif service_type == "doubao":
+            return VideoServiceFactory._create_doubao_service(
                 config_override, logger
             )
         else:
@@ -306,6 +311,42 @@ class VideoServiceFactory:
         logger.info(
             f"AliTokenPlanVideoService created successfully: "
             f"model={service.model}, base_url={service.base_url}"
+        )
+        return service
+
+    @staticmethod
+    def _create_doubao_service(
+        config_override: Dict[str, Any],
+        logger: logging.Logger
+    ) -> DoubaoVideoService:
+        """Create DoubaoVideoService (Volcano Ark Seedance).
+
+        Raises:
+            ValueError: when no Ark API key is configured.
+        """
+        api_key = config_override.get("api_key") or settings.doubao_video_api_key
+        if not api_key:
+            error_msg = (
+                "Doubao video API key not configured. Set DOUBAO_VIDEO_API_KEY "
+                "in .env or via the Settings UI (Volcano Ark API key)."
+            )
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+
+        service = DoubaoVideoService(
+            api_key=api_key,
+            base_url=config_override.get("base_url"),
+            endpoint=config_override.get("endpoint"),
+            model=config_override.get("model"),
+            t2v_model=config_override.get("t2v_model"),
+            default_resolution=config_override.get("default_resolution"),
+            default_ratio=config_override.get("default_ratio"),
+            default_duration=config_override.get("default_duration"),
+            watermark=config_override.get("watermark"),
+        )
+        logger.info(
+            f"DoubaoVideoService created successfully: model={service.model}, "
+            f"base_url={service.base_url}"
         )
         return service
 

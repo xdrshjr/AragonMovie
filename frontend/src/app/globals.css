@@ -5,57 +5,84 @@
 /* Import custom styles */
 @import '../styles/tabs.css';
 
-/* Apple Design System Variables */
+/* ------------------------------------------------------------------ *
+ * Design tokens — premium gray-black (dark only)
+ *
+ * The product ships dark-only: `<html class="dark">` is always present and
+ * the tokens below are declared on `:root` so anything rendered outside the
+ * app shell (portals, browser chrome, error overlays) inherits the same
+ * palette instead of a white slab.
+ * ------------------------------------------------------------------ */
 :root {
-  /* Colors - Light Mode - Gray/Black Theme */
-  --color-primary: #2C2C2E;
-  --color-primary-alpha: rgba(44, 44, 46, 0.1);
-  --color-primary-hover: #3A3A3C;
-  --color-primary-active: #48484A;
-  --color-secondary: #5856D6;
-  --color-success: #34C759;
-  --color-warning: #FF9500;
-  --color-error: #FF3B30;
+  color-scheme: dark;
 
-  --color-background: #F5F5F7;
-  --color-surface: #FFFFFF;
-  --color-surface-elevated: #FAFAFA;
+  /* Surfaces */
+  --color-background: #0A0A0B;
+  --color-background-deep: #060607;
+  --color-surface: #101012;
+  --color-surface-elevated: #17171A;
+  --color-surface-hover: #1E1E22;
 
-  --color-text-primary: #1C1C1E;
-  --color-text-secondary: #6E6E73;
-  --color-text-tertiary: #AEAEB2;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.16);
-  
+  /* Hairlines */
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.14);
+
+  /* Text */
+  --color-text-primary: #F3F3F5;
+  --color-text-secondary: #9B9BA3;
+  --color-text-tertiary: #6B6B73;
+
+  /* Restrained cool-indigo accent (focus, selection, sliders) */
+  --color-accent: #7C86FF;
+  --color-accent-strong: #6A74F0;
+  --color-accent-soft: rgba(124, 134, 255, 0.12);
+  --color-accent-border: rgba(124, 134, 255, 0.34);
+  --color-accent-ring: rgba(124, 134, 255, 0.42);
+  --color-accent-text: #B4BAFF;
+
+  /* Semantic tones, readable on near-black */
+  --color-success: #3FD07A;
+  --color-success-soft: rgba(63, 208, 122, 0.12);
+  --color-success-border: rgba(63, 208, 122, 0.32);
+  --color-success-text: #86E7AE;
+
+  --color-warning: #FFB020;
+  --color-warning-soft: rgba(255, 176, 32, 0.12);
+  --color-warning-border: rgba(255, 176, 32, 0.32);
+  --color-warning-text: #FFD08A;
+
+  --color-error: #FF5A57;
+  --color-error-soft: rgba(255, 90, 87, 0.12);
+  --color-error-border: rgba(255, 90, 87, 0.34);
+  --color-error-text: #FF9E9C;
+
+  /* Control aliases (buttons, focus outline, spinners) */
+  --color-primary: var(--color-accent);
+  --color-primary-alpha: var(--color-accent-soft);
+  --color-primary-hover: var(--color-accent-strong);
+  --color-primary-active: #5B66E8;
+  --color-secondary: var(--color-accent);
+
+  /* Elevated elevation: near-black shadows + a hairline top light */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-md: 0 8px 24px -14px rgba(0, 0, 0, 0.9), 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  --shadow-lg: 0 18px 48px -22px rgba(0, 0, 0, 0.95), 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  --shadow-xl: 0 32px 80px -32px rgba(0, 0, 0, 0.98), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+
   /* Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
-  
+
   /* Transitions */
-  --transition-duration: 300ms;
+  --transition-duration: 240ms;
   --transition-timing: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark Mode */
+/* Dark is permanent, but the class still drives the `dark:` variants. */
 .dark {
-  --color-background: #000000;
-  --color-surface: #1C1C1E;
-  --color-surface-elevated: #2C2C2E;
-  
-  --color-text-primary: #FFFFFF;
-  --color-text-secondary: #98989D;
-  --color-text-tertiary: #48484A;
-  
-  --shadow-sm: 0 1px 3px rgba(255, 255, 255, 0.1);
-  --shadow-md: 0 4px 12px rgba(255, 255, 255, 0.08);
-  --shadow-lg: 0 8px 24px rgba(255, 255, 255, 0.12);
-  --shadow-xl: 0 16px 48px rgba(255, 255, 255, 0.16);
+  color-scheme: dark;
 }
 
 /* Base Styles */
@@ -75,34 +102,61 @@ body {
 }
 
 body {
+  /* Painted before React hydrates so there is never a white flash. */
   background-color: var(--color-background);
+  background-image:
+    radial-gradient(120% 70% at 50% -25%, rgba(124, 134, 255, 0.07), transparent 62%),
+    radial-gradient(70% 50% at 100% 0%, rgba(124, 134, 255, 0.04), transparent 58%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
   color: var(--color-text-primary);
   transition: background-color var(--transition-duration) var(--transition-timing),
               color var(--transition-duration) var(--transition-timing);
 }
 
+h1, h2, h3, h4 {
+  letter-spacing: -0.02em;
+}
+
+::selection {
+  background-color: var(--color-accent-soft);
+  color: var(--color-text-primary);
+}
+
 /* Scrollbar Styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--color-surface);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-text-tertiary);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 8px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary);
+  background: rgba(255, 255, 255, 0.26);
+  background-clip: content-box;
 }
 
-/* Focus Styles */
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Focus Styles — accent ring, never a white slab */
 *:focus {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -110,31 +164,49 @@ body {
   outline: none;
 }
 
+/* Native controls follow the dark palette */
+input,
+textarea,
+select,
+button {
+  color-scheme: dark;
+}
+
+input[type='checkbox'],
+input[type='radio'],
+input[type='range'] {
+  accent-color: var(--color-accent);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
 /* Utility Classes */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-  
+
   .transition-apple {
     transition-duration: var(--transition-duration);
     transition-timing-function: var(--transition-timing);
   }
-  
-  .shadow-apple-sm {
-    box-shadow: var(--shadow-sm);
-  }
-  
-  .shadow-apple-md {
-    box-shadow: var(--shadow-md);
-  }
-  
-  .shadow-apple-lg {
-    box-shadow: var(--shadow-lg);
-  }
-  
-  .shadow-apple-xl {
-    box-shadow: var(--shadow-xl);
+
+  /* Subtle top-edge glow used by the app header */
+  .glow-top {
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

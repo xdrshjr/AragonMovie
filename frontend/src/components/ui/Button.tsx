@@ -30,12 +30,12 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseClasses = 'btn-apple transition-apple font-semibold inline-flex items-center justify-center';
-  
+  const baseClasses = 'btn-apple transition-apple inline-flex items-center justify-center focus-visible:outline-none';
+
   const variantClasses = {
     primary: 'btn-apple-primary',
     secondary: 'btn-apple-secondary',
-    danger: 'bg-apple-red hover:bg-red-600 text-white',
+    danger: 'bg-apple-red text-white border-transparent hover:bg-apple-red/90 active:bg-apple-red/80',
   };
   
   const sizeClasses = {

@@ -61,7 +61,7 @@ export default function ProviderCard({
           <div className="flex items-center gap-2">
             <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
             {badge && (
-              <span className="px-2 py-0.5 rounded-full bg-apple-blue/10 text-apple-blue text-xs font-medium">
+              <span className="px-2 py-0.5 rounded-full border border-accent-border bg-accent-soft text-accent-text text-xs font-medium">
                 {badge}
               </span>
             )}
@@ -103,7 +103,7 @@ export default function ProviderCard({
                   {(values[field.key] as string) && (
                     <button
                       type="button"
-                      className="text-xs text-apple-blue hover:underline"
+                      className="text-xs text-accent-text hover:underline"
                       onClick={() => onChange(field.key, '')}
                     >
                       清除
@@ -124,7 +124,7 @@ export default function ProviderCard({
                   />
                   <button
                     type="button"
-                    className="px-3 rounded-apple-md border border-[var(--color-border)] text-sm text-text-secondary hover:text-text-primary"
+                    className="px-3 rounded-apple-md border border-hairline bg-surface text-sm text-text-secondary transition-colors hover:border-hairline-strong hover:text-text-primary"
                     onClick={() => setShowSecret((v) => !v)}
                   >
                     {showSecret ? '隐藏' : '显示'}
@@ -173,8 +173,8 @@ export default function ProviderCard({
         <div
           className={`mt-4 p-3 rounded-apple-md text-sm ${
             testResult.success
-              ? 'bg-apple-green/10 text-apple-green'
-              : 'bg-apple-red/10 text-apple-red'
+              ? 'bg-success-soft border border-success-border text-success-text'
+              : 'bg-error-soft border border-error-border text-error-text'
           }`}
         >
           <div className="flex items-center gap-2">

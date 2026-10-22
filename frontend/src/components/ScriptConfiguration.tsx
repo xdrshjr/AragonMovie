@@ -178,7 +178,7 @@ export const ScriptConfiguration: React.FC<ScriptConfigurationProps> = ({
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex items-center gap-2 text-apple-blue hover:text-apple-blue-dark transition-colors"
+          className="flex items-center gap-2 text-accent hover:text-accent-strong transition-colors"
         >
           <svg
             className={`w-5 h-5 transition-transform ${showAdvanced ? 'rotate-90' : ''}`}

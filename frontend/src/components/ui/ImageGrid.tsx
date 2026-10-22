@@ -52,7 +52,7 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
 
   if (validImages.length === 0) {
     return (
-      <div className="p-4 text-center text-text-secondary border border-text-tertiary rounded-apple-md">
+      <div className="p-4 text-center text-text-secondary bg-surface border border-hairline rounded-apple-md">
         <p>No valid images to display</p>
       </div>
     );
@@ -80,10 +80,10 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
             onClick={() => onSelect(image.id)}
             data-testid={`${testIdPrefix}-${index}`}
             data-selected={image.selected}
-            className={`relative block w-full cursor-pointer rounded-apple-md overflow-hidden transition-apple focus:outline-none focus-visible:ring-4 focus-visible:ring-apple-blue ${
+            className={`relative block w-full cursor-pointer rounded-apple-md overflow-hidden transition-apple bg-background-deep focus:outline-none focus-visible:ring-4 focus-visible:ring-accent-ring ${
               image.selected
-                ? 'ring-4 ring-apple-blue shadow-apple-lg'
-                : 'ring-1 ring-text-tertiary hover:ring-2 hover:ring-apple-blue'
+                ? 'ring-2 ring-accent shadow-apple-lg'
+                : 'ring-1 ring-white/10 hover:ring-accent-border'
             }`}
             style={{ aspectRatio }}
           >
@@ -98,7 +98,7 @@ export const ImageGrid: React.FC<ImageGridProps> = ({
             {image.selected && (
               <span
                 aria-hidden="true"
-                className="absolute top-2 right-2 bg-apple-blue text-white rounded-full w-8 h-8 flex items-center justify-center"
+                className="absolute top-2 right-2 bg-accent text-[#0A0A0B] rounded-full w-8 h-8 flex items-center justify-center shadow-apple-sm"
               >
                 <svg
                   className="w-5 h-5"

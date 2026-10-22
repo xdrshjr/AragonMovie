@@ -81,8 +81,8 @@ export default function QuickStep2SceneConfig({
 
         {/* Batch Configuration Panel */}
         {batchMode && (
-          <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-apple-lg border border-blue-200 dark:border-blue-800">
-            <h4 className="text-md font-semibold text-blue-900 dark:text-blue-100 mb-4">
+          <div className="mb-6 p-4 bg-surface rounded-apple-lg border border-hairline">
+            <h4 className="text-base font-semibold text-text-primary mb-4">
               批量配置 - 应用到所有场景
             </h4>
 
@@ -122,7 +122,7 @@ export default function QuickStep2SceneConfig({
                       cameraMotion: e.target.value as any,
                     })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-apple-md bg-background text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 border border-hairline rounded-apple-md bg-background-deep text-text-primary transition-colors hover:border-hairline-strong focus:outline-none focus:ring-2 focus:ring-accent-ring focus:border-accent-border"
                 >
                   <option value="">无 (自动)</option>
                   <option value="static">静止</option>
@@ -172,7 +172,7 @@ export default function QuickStep2SceneConfig({
                   }
                   placeholder="例如：镜头缓慢向右平移，展现场景全貌"
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-apple-md bg-background text-text-primary focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                  className="w-full px-3 py-2 border border-hairline rounded-apple-md bg-background-deep text-text-primary transition-colors hover:border-hairline-strong focus:outline-none focus:ring-2 focus:ring-accent-ring focus:border-accent-border resize-none"
                 />
               </div>
             </div>
@@ -190,12 +190,12 @@ export default function QuickStep2SceneConfig({
           {scenes.map((scene, index) => (
             <div
               key={scene.id}
-              className="p-4 bg-background rounded-apple-lg border border-gray-200 dark:border-gray-700"
+              className="p-4 bg-surface rounded-apple-lg border border-hairline"
             >
               <div className="flex gap-4">
                 {/* Image Preview */}
                 <div className="flex-shrink-0">
-                  <div className="w-32 h-20 bg-gray-100 dark:bg-gray-800 rounded-apple-md overflow-hidden">
+                  <div className="w-32 h-20 bg-background-deep rounded-apple-md overflow-hidden">
                     <img
                       src={scene.imagePreview}
                       alt={scene.id}
@@ -238,7 +238,7 @@ export default function QuickStep2SceneConfig({
                           cameraMotion: e.target.value as any || undefined,
                         })
                       }
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-apple-md bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="w-full px-3 py-2 border border-hairline rounded-apple-md bg-background-deep text-text-primary transition-colors hover:border-hairline-strong text-sm focus:outline-none focus:ring-2 focus:ring-accent-ring focus:border-accent-border"
                     >
                       <option value="">无 (自动)</option>
                       <option value="static">静止</option>
@@ -260,7 +260,7 @@ export default function QuickStep2SceneConfig({
                       }
                       placeholder="描述这个场景的镜头运动和氛围..."
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-apple-md bg-background text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                      className="w-full px-3 py-2 border border-hairline rounded-apple-md bg-background-deep text-text-primary transition-colors hover:border-hairline-strong text-sm focus:outline-none focus:ring-2 focus:ring-accent-ring focus:border-accent-border resize-none"
                     />
                   </div>
                 </div>
@@ -270,8 +270,8 @@ export default function QuickStep2SceneConfig({
         </div>
 
         {/* Info Box */}
-        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 rounded-apple-md">
-          <p className="text-sm text-green-800 dark:text-green-200">
+        <div className="mt-6 p-4 bg-success-soft border border-success-border rounded-apple-md">
+          <p className="text-sm text-success-text">
             ✓ <strong>配置完成：</strong>
             {scenes.length} 个场景已准备就绪，总时长约{' '}
             {scenes.reduce((sum, s) => sum + s.duration, 0)} 秒

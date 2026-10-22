@@ -1,0 +1,66 @@
+appId: com.aragon.movie
+productName: AragonMovie
+copyright: Copyright © 2026 Aragon Studio
+
+directories:
+  output: release
+  buildResources: assets
+
+# Only the Electron shell lives inside app.asar. The Python pipeline, the
+# portable interpreter and the Next.js standalone server are unpacked under
+# resources/ so they can be executed as real files.
+files:
+  - src/**/*
+  - ui/**/*
+  - assets/**/*
+  - package.json
+  - "!**/*.map"
+
+extraResources:
+  - from: ../build/desktop/app
+    to: app
+    filter:
+      - "**/*"
+      - "!**/__pycache__/**"
+      - "!**/*.pyc"
+  - from: ../build/desktop/web
+    to: web
+    filter:
+      - "**/*"
+      - "!**/*.map"
+  - from: ../build/desktop/python
+    to: python
+    filter:
+      - "**/*"
+
+asar: true
+compression: normal
+removePackageScripts: true
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: assets/icon.ico
+  artifactName: ${productName}-${version}-Setup.${ext}
+  requestedExecutionLevel: asInvoker
+  legalTrademarks: AragonMovie
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: AragonMovie
+  uninstallDisplayName: AragonMovie ${version}
+  deleteAppDataOnUninstall: false
+  installerIcon: assets/icon.ico
+  uninstallerIcon: assets/icon.ico
+  installerHeaderIcon: assets/icon.ico
+  runAfterFinish: true
+
+portable:
+  artifactName: ${productName}-${version}-Portable.${ext}

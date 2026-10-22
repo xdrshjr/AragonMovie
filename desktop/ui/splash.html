@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; img-src data:;" />
+    <title>AragonMovie · 启动中</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #08080a;
+        --surface: #101012;
+        --hairline: rgba(255, 255, 255, 0.08);
+        --text: #f3f3f5;
+        --text-2: #9b9ba3;
+        --text-3: #6b6b73;
+        --accent: #7c86ff;
+        --success: #3fd07a;
+        --error: #ff5a57;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: 'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        user-select: none;
+      }
+      body {
+        position: relative;
+        background:
+          radial-gradient(120% 90% at 12% -10%, rgba(124, 134, 255, 0.18), transparent 60%),
+          radial-gradient(90% 80% at 100% 0%, rgba(63, 208, 122, 0.07), transparent 55%),
+          #08080a;
+      }
+      body::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 12px;
+      }
+      .drag {
+        -webkit-app-region: drag;
+        height: 34px;
+        width: 100%;
+      }
+      .wrap {
+        padding: 0 34px 30px;
+        height: calc(100% - 34px);
+        display: flex;
+        flex-direction: column;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .mark {
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
+        background: linear-gradient(155deg, #1c1c22, #0e0e11);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .mark::before {
+        content: '';
+        position: absolute;
+        inset: -40% -60% auto auto;
+        width: 120%;
+        height: 120%;
+        background: radial-gradient(circle at 70% 20%, rgba(124, 134, 255, 0.55), transparent 60%);
+        filter: blur(6px);
+      }
+      .mark svg {
+        position: relative;
+        z-index: 1;
+      }
+      .brand h1 {
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+      }
+      .brand p {
+        font-size: 12px;
+        color: var(--text-3);
+        letter-spacing: 0.2px;
+        margin-top: 2px;
+      }
+      .status {
+        margin-top: 26px;
+        font-size: 13px;
+        color: var(--text-2);
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-height: 20px;
+      }
+      .spinner {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.16);
+        border-top-color: var(--accent);
+        animation: spin 0.9s linear infinite;
+        flex: 0 0 auto;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      .bar {
+        margin-top: 14px;
+        height: 3px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+        overflow: hidden;
+      }
+      .bar span {
+        display: block;
+        height: 100%;
+        width: 30%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, rgba(124, 134, 255, 0), var(--accent), rgba(124, 134, 255, 0));
+        animation: slide 1.6s ease-in-out infinite;
+      }
+      @keyframes slide {
+        0% {
+          transform: translateX(-100%);
+        }
+        100% {
+          transform: translateX(360%);
+        }
+      }
+      ul.steps {
+        list-style: none;
+        margin-top: 22px;
+        display: flex;
+        flex-direction: column;
+        gap: 9px;
+        flex: 1;
+        overflow: hidden;
+      }
+      ul.steps li {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+        color: var(--text-3);
+        transition: color 0.25s ease;
+      }
+      ul.steps li .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.16);
+        flex: 0 0 auto;
+      }
+      ul.steps li.active {
+        color: var(--text);
+      }
+      ul.steps li.active .dot {
+        background: var(--accent);
+        box-shadow: 0 0 0 4px rgba(124, 134, 255, 0.14);
+      }
+      ul.steps li.done {
+        color: var(--text-2);
+      }
+      ul.steps li.done .dot {
+        background: var(--success);
+      }
+      ul.steps li .detail {
+        margin-left: auto;
+        color: var(--text-3);
+        font-variant-numeric: tabular-nums;
+        font-size: 11px;
+      }
+      .error-box {
+        display: none;
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 90, 87, 0.32);
+        background: rgba(255, 90, 87, 0.08);
+        font-size: 12px;
+        line-height: 1.55;
+        color: #ffd9d8;
+        max-height: 120px;
+        overflow: auto;
+        user-select: text;
+        -webkit-user-select: text;
+      }
+      .error-box strong {
+        display: block;
+        color: var(--error);
+        margin-bottom: 4px;
+        font-weight: 600;
+      }
+      .actions {
+        display: none;
+        gap: 10px;
+        margin-top: 16px;
+      }
+      button {
+        font: inherit;
+        font-size: 12px;
+        height: 34px;
+        padding: 0 16px;
+        border-radius: 9px;
+        border: 1px solid var(--hairline);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--text);
+        cursor: pointer;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      button:hover {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      button.primary {
+        background: #ededf0;
+        color: #0a0a0b;
+        border-color: transparent;
+        font-weight: 600;
+      }
+      button.primary:hover {
+        background: #ffffff;
+      }
+      .foot {
+        margin-top: 18px;
+        font-size: 11px;
+        color: #4d4d54;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+      }
+      body.is-error .spinner,
+      body.is-error .bar {
+        display: none;
+      }
+      body.is-error .error-box,
+      body.is-error .actions {
+        display: flex;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="drag"></div>
+    <div class="wrap">
+      <div class="brand">
+        <div class="mark">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M9 7.6c0-.9 1-1.5 1.8-1L16.6 10a1.2 1.2 0 0 1 0 2l-5.8 3.4c-.8.5-1.8-.1-1.8-1V7.6Z" fill="#F3F3F5" />
+            <path d="M12 2.6 20.4 7v10L12 21.4 3.6 17V7L12 2.6Z" stroke="rgba(255,255,255,.22)" stroke-width="1.1" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <div>
+          <h1>AragonMovie</h1>
+          <p>AI 短剧自动化生成工作台</p>
+        </div>
+      </div>
+
+      <div class="status" id="status">
+        <span class="spinner"></span>
+        <span id="status-text">正在启动本地服务…</span>
+      </div>
+      <div class="bar"><span></span></div>
+
+      <ul class="steps" id="steps">
+        <li data-stage="files">
+          <span class="dot"></span>
+          <span>准备工作区</span>
+          <span class="detail"></span>
+        </li>
+        <li data-stage="backend">
+          <span class="dot"></span>
+          <span>本地生成服务</span>
+          <span class="detail"></span>
+        </li>
+        <li data-stage="web">
+          <span class="dot"></span>
+          <span>界面服务</span>
+          <span class="detail"></span>
+        </li>
+        <li data-stage="ready">
+          <span class="dot"></span>
+          <span>就绪</span>
+          <span class="detail"></span>
+        </li>
+      </ul>
+
+      <div class="error-box" id="error-box">
+        <strong>启动未完成</strong>
+        <span id="error-detail"></span>
+      </div>
+      <div class="actions">
+        <button class="primary" id="retry">重试</button>
+        <button id="logs">打开日志</button>
+        <button id="quit">退出</button>
+      </div>
+
+      <div class="foot">
+        <span id="version">AragonMovie</span>
+        <span>首次启动会自动配置本地环境</span>
+      </div>
+    </div>
+
+    <script>
+      const shell = window.aragonShell || {};
+      const statusText = document.getElementById('status-text');
+      const steps = new Map(
+        Array.from(document.querySelectorAll('#steps li')).map((li) => [li.dataset.stage, li])
+      );
+
+      function mark(stage, status, detail) {
+        const li = steps.get(stage);
+        if (!li) return;
+        li.classList.remove('active', 'done');
+        if (status === 'running') li.classList.add('active');
+        if (status === 'done') li.classList.add('done');
+        if (detail !== undefined) li.querySelector('.detail').textContent = detail || '';
+      }
+
+      function fail(payload) {
+        document.body.classList.add('is-error');
+        statusText.textContent = payload.message || '启动失败';
+        document.getElementById('error-detail').textContent = payload.detail || '请查看日志获取更多信息。';
+      }
+
+      shell.onStartup?.((payload) => {
+        if (!payload) return;
+        if (payload.status === 'error' || payload.stage === 'error') {
+          fail(payload);
+          return;
+        }
+        statusText.textContent = payload.message || '正在启动…';
+        mark(payload.stage, payload.status, payload.detail);
+        if (payload.stage === 'ready' && payload.status === 'done') {
+          statusText.textContent = '准备就绪，正在打开界面…';
+        }
+      });
+
+      document.getElementById('retry').addEventListener('click', async () => {
+        document.body.classList.remove('is-error');
+        statusText.textContent = '正在重新启动…';
+        await shell.retry?.();
+      });
+      document.getElementById('logs').addEventListener('click', () => shell.openPath?.('logs'));
+      document.getElementById('quit').addEventListener('click', () => shell.quit?.());
+
+      shell.onServiceError?.((payload) => fail({ message: payload.message, detail: `日志：${payload.logFile}` }));
+
+      shell
+        .info?.()
+        .then((info) => {
+          if (info?.appVersion) document.getElementById('version').textContent = `AragonMovie ${info.appVersion}`;
+        })
+        .catch(() => {});
+    </script>
+  </body>
+</html>

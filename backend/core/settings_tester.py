@@ -173,6 +173,45 @@ async def test_voice(settings: ModelSettings) -> List[ConnectionTestResult]:
         strict=False,
     )
 
+    if transport == "volc_tts2":
+        from services.volc_tts_service import VolcTTS2Service, VolcTTSError
+
+        volc_key = voice.volc_api_key or ""
+        if not volc_key:
+            return [ConnectionTestResult(
+                category="voice", target=name, success=False,
+                message=(
+                    "未配置火山引擎语音合成 2.0 的 API Key："
+                    "请在「语音合成」里选择火山 TTS 2.0 并填写 API Key"
+                ),
+                verified="full",
+            )]
+        start = time.time()
+        service = VolcTTS2Service(
+            api_key=volc_key,
+            resource_id=voice.volc_resource_id,
+            voice=voice.volc_voice,
+        )
+        try:
+            audio = await service.synthesize("你好", timeout=45.0)
+            return [ConnectionTestResult(
+                category="voice", target=name, success=True,
+                latency_ms=_latency(start),
+                message=(
+                    f"火山 TTS 2.0 合成成功（{voice.volc_resource_id}，"
+                    f"{voice.volc_voice}，返回 {len(audio)} 字节音频）"
+                ),
+                verified="full",
+            )]
+        except VolcTTSError as e:
+            return [ConnectionTestResult(
+                category="voice", target=name, success=False,
+                latency_ms=_latency(start),
+                message=str(e)[:200],
+                detail=str(e),
+                verified="full",
+            )]
+
     if transport == "dashscope_native":
         api_key = voice.native_api_key or voice.api_key
         if not api_key:
@@ -267,6 +306,60 @@ async def test_voice(settings: ModelSettings) -> List[ConnectionTestResult]:
             )]
 
 
+async def _test_doubao_video(
+    client: httpx.AsyncClient, config
+) -> ConnectionTestResult:
+    """Probe the Volcano Ark key cheaply: list models instead of generating."""
+    if not config.api_key:
+        return ConnectionTestResult(
+            category="video", target="doubao", success=False,
+            message="未配置 API Key", verified="full",
+        )
+    root = config.base_url.rstrip("/")
+    if root.endswith("/api/v3"):
+        root = root[: -len("/api/v3")]
+    start = time.time()
+    try:
+        resp = await client.get(
+            f"{root}/api/v3/models",
+            headers={"Authorization": f"Bearer {config.api_key}"},
+        )
+        latency = _latency(start)
+        if resp.status_code in (401, 403):
+            return ConnectionTestResult(
+                category="video", target="doubao", success=False,
+                latency_ms=latency,
+                message="Ark API Key 无效或无权限",
+                detail=_excerpt(resp.text), verified="full",
+            )
+        if resp.status_code != 200:
+            return ConnectionTestResult(
+                category="video", target="doubao", success=False,
+                latency_ms=latency,
+                message=f"Ark 返回 {resp.status_code}",
+                detail=_excerpt(resp.text), verified="partial",
+            )
+        ids = {m.get("id") for m in (resp.json().get("data") or [])}
+        model_ok = config.model in ids
+        return ConnectionTestResult(
+            category="video", target="doubao", success=True,
+            latency_ms=latency,
+            message=(
+                f"{config.model}: 认证通过，模型已开通"
+                if model_ok
+                else f"认证通过，但 {config.model} 不在可用模型列表中"
+            ),
+            verified="partial",
+        )
+    except httpx.HTTPError as e:
+        return ConnectionTestResult(
+            category="video", target="doubao", success=False,
+            latency_ms=_latency(start),
+            message=f"连接失败: {e.__class__.__name__}",
+            detail=str(e), verified="partial",
+        )
+
+
 async def _test_video_provider(
     client: httpx.AsyncClient, name: str, base_url: str, api_key: str, model: str
 ) -> ConnectionTestResult:
@@ -301,6 +394,9 @@ async def test_video(settings: ModelSettings) -> List[ConnectionTestResult]:
                 # Unconfigured alternative provider: not an error, just skip.
                 continue
             results.append(r)
+        doubao_cfg = getattr(video, "doubao", None)
+        if doubao_cfg is not None and (doubao_cfg.api_key or selected == "doubao"):
+            results.append(await _test_doubao_video(client, doubao_cfg))
         return results
 
 

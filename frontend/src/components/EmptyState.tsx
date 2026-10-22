@@ -32,12 +32,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </div>
 
       {/* Title */}
-      <h2 className="text-2xl font-semibold text-[var(--color-text-primary)] mb-3">
+      <h2 className="text-2xl font-semibold text-text-primary mb-3">
         {title}
       </h2>
 
       {/* Description */}
-      <p className="text-base text-[var(--color-text-secondary)] text-center max-w-md mb-8">
+      <p className="text-base text-text-secondary text-center max-w-md mb-8">
         {description}
       </p>
 

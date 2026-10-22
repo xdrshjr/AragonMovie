@@ -13,7 +13,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
-import { apiClient } from '@/lib/api';
+import { apiClient, getApiBase } from '@/lib/api';
 import { Project } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
@@ -72,7 +72,7 @@ export default function ProjectDetailPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
@@ -87,7 +87,7 @@ export default function ProjectDetailPage() {
   // Error state
   if (error || !project) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 px-8 py-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
@@ -120,13 +120,13 @@ export default function ProjectDetailPage() {
 
   // Completed project - Show video player
   if (project.status === 'completed' && project.video_path) {
-    const videoUrl = `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'}${project.video_path}`;
+    const videoUrl = `${getApiBase()}${project.video_path}`;
     const thumbnailUrl = project.thumbnail_path
       ? apiClient.getProjectThumbnailUrl(project.id)
       : undefined;
 
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 px-8 py-8 overflow-y-auto">
           <div className="max-w-5xl mx-auto">
@@ -138,14 +138,14 @@ export default function ProjectDetailPage() {
               >
                 ← Back to Projects
               </Link>
-              <span className="px-3 py-1.5 rounded-full bg-[#34C759] text-white text-sm font-medium">
+              <span className="px-3 py-1.5 rounded-full bg-success text-[#0A0A0B] text-sm font-medium shadow-apple-sm">
                 ✓ Completed
               </span>
             </div>
 
             {/* Project Info */}
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-text-primary mb-2">
+              <h1 className="text-4xl font-bold tracking-[-0.02em] text-text-primary mb-2">
                 {project.name}
               </h1>
               {project.description && (
@@ -154,10 +154,10 @@ export default function ProjectDetailPage() {
                 </p>
               )}
               <div className="flex items-center gap-4 mt-4 text-sm text-text-tertiary">
-                <span className="px-3 py-1 rounded bg-surface-elevated">
+                <span className="px-3 py-1 rounded border border-hairline bg-surface-hover">
                   {project.video_type.replaceAll('_', ' ')}
                 </span>
-                <span className="px-3 py-1 rounded bg-surface-elevated">
+                <span className="px-3 py-1 rounded border border-hairline bg-surface-hover">
                   {project.mode} mode
                 </span>
                 {project.duration && (
@@ -170,7 +170,7 @@ export default function ProjectDetailPage() {
             </div>
 
             {/* Video Player */}
-            <div className="card-apple overflow-hidden mb-8">
+            <div className="bg-black border border-hairline rounded-apple-lg overflow-hidden shadow-apple-md mb-8">
               <video
                 controls
                 className="w-full"
@@ -206,7 +206,7 @@ export default function ProjectDetailPage() {
   // Failed project - Show error
   if (project.status === 'failed') {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 px-8 py-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
@@ -229,8 +229,8 @@ export default function ProjectDetailPage() {
               </div>
 
               {project.error_message && (
-                <div className="bg-[#FF3B30]/10 border border-[#FF3B30]/20 rounded-lg p-4 mb-6">
-                  <h3 className="text-sm font-semibold text-[#FF3B30] mb-2">Error Details:</h3>
+                <div className="bg-error-soft border border-error-border rounded-apple-md p-4 mb-6">
+                  <h3 className="text-sm font-semibold text-error-text mb-2">Error Details:</h3>
                   <p className="text-sm text-text-secondary font-mono">
                     {project.error_message}
                   </p>
@@ -264,7 +264,7 @@ export default function ProjectDetailPage() {
   // In-progress project - Show progress
   if (project.status === 'processing' || project.status === 'pending') {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-1 px-8 py-8 overflow-y-auto">
           <div className="max-w-4xl mx-auto">
@@ -276,7 +276,7 @@ export default function ProjectDetailPage() {
               >
                 ← Back to Projects
               </Link>
-              <span className="px-3 py-1.5 rounded-full bg-[#007AFF] text-white text-sm font-medium animate-pulse">
+              <span className="px-3 py-1.5 rounded-full bg-accent text-[#0A0A0B] text-sm font-medium shadow-apple-sm animate-pulse">
                 ⚡ Generating...
               </span>
             </div>
@@ -313,7 +313,7 @@ export default function ProjectDetailPage() {
                 </div>
                 <div className="progress-apple">
                   <div
-                    className="progress-apple-bar"
+                    className="progress-apple-fill"
                     style={{ width: `${project.progress}%` }}
                   />
                 </div>
@@ -339,7 +339,7 @@ export default function ProjectDetailPage() {
 
   // Cancelled project
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 px-8 py-8 overflow-y-auto">
         <div className="max-w-4xl mx-auto">
