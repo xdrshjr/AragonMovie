@@ -53,6 +53,11 @@ PATTERNS = {
 FIXTURE_HINTS = ("your_", "YOUR_", "example", "placeholder", "dummy", "xxxx", "9999")
 INFORMATIONAL_PATHS = ("tests/", "backend/docs/")
 
+# Intentional synthetic fixtures opt out with an inline marker (the same
+# idiom as `pragma: allowlist secret`). Only the pattern heuristic honours
+# it; the comparison against real local credentials never does.
+ALLOW_MARKER = re.compile(r"credential-gate:\s*allow", re.IGNORECASE)
+
 
 def run(args: list[str]) -> str:
     result = subprocess.run(args, cwd=REPO, capture_output=True, text=True, encoding="utf-8", errors="replace")
@@ -134,7 +139,11 @@ def scan_lines(paths_lines: list[str]) -> tuple[list[str], list[str]]:
     for entry in paths_lines:
         path, _, rest = entry.partition(":")
         lineno, _, content = rest.partition(":")
-        if any(hint in content for hint in FIXTURE_HINTS) or path.startswith(INFORMATIONAL_PATHS):
+        if (
+            any(hint in content for hint in FIXTURE_HINTS)
+            or path.startswith(INFORMATIONAL_PATHS)
+            or ALLOW_MARKER.search(content)
+        ):
             informational.append(entry)
         else:
             real.append(entry)
@@ -144,14 +153,16 @@ def scan_lines(paths_lines: list[str]) -> tuple[list[str], list[str]]:
 def pattern_hits() -> tuple[list[str], list[str]]:
     real, informational = [], []
     for label, pattern in PATTERNS.items():
-        out = run(["git", "grep", "-I", "-E", "-n", "-o", pattern, "--", "."])
+        # Keep the matched LINE (not just -o output) so the inline allow marker
+        # and placeholder idioms can be evaluated.
+        out = run(["git", "grep", "-I", "-E", "-n", pattern, "--", "."])
         entries = []
         for line in out.strip().splitlines():
             path, _, rest = line.partition(":")
-            lineno, _, _match = rest.partition(":")
-            if path in (".env.example",) or Path(path).resolve() == SELF:
+            lineno, _, content = rest.partition(":")
+            if path == ".env.example" or Path(path).resolve() == SELF:
                 continue
-            entries.append(f"{path}:{lineno} ({label})")
+            entries.append(f"{path}:{lineno}:{content} ({label})")
         group_real, group_info = scan_lines(entries)
         real.extend(group_real)
         informational.extend(group_info)
@@ -171,10 +182,16 @@ def untracked_pattern_hits() -> list[str]:
         except OSError:
             continue
         for label, regex in compiled.items():
-            for match in regex.finditer(text):
-                if any(hint in match.group(0) for hint in FIXTURE_HINTS):
+            for number, line in enumerate(text.splitlines(), 1):
+                if ALLOW_MARKER.search(line):
                     continue
-                found.append(f"{rel} ({label})")
+                for match in regex.finditer(line):
+                    if any(hint in match.group(0) for hint in FIXTURE_HINTS):
+                        continue
+                    found.append(f"{rel}:{number} ({label})")
+                    break
+                else:
+                    continue
                 break
     return found
 
@@ -192,6 +209,8 @@ def history_pattern_hits() -> list[str]:
         elif line.startswith("+++ b/") or line.startswith("--- a/"):
             path = line[6:]
         elif line[:1] in "+-" and not line.startswith(("+++", "---")):
+            if ALLOW_MARKER.search(line):
+                continue
             # "+" = the secret was ADDED by this commit (still in the tree
             # unless a later commit removed it), "-" = it was REMOVED here
             # (a redaction commit, which of course still carries the value in
